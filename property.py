@@ -1,5 +1,6 @@
-from random import randint
-from cnmaps import get_adm_maps
+from random import randint, choice
+from location import Location
+
 
 class Property:
     # 卧室数
@@ -8,41 +9,42 @@ class Property:
     bathrooms = 0
     # 车位数
     carspaces = 0
+    # floor
+    floor = 0
     # 房屋面积
-    building_area = 0
+    area = 0
     # 价格 单位万
     price = 0
+    # 省份
+    province = ""
     # 城市
     city = ""
     # 城区
     district = ""
     # 建筑年代
     build_year = 0
-    # 装修等级 0清水 1简装 3精装
-    decoration = 0
-    # 房产类型 1住宅,2商业
-    property_type = 1
+    # 装修等级
+    decoration = "简装"
+    # 房产类型
+    type = "住宅"
     # 离地铁距离
     distance_to_metro = 0
     # 离学校距离
     distance_to_school = 0
-    # 中介描述
+    # 房屋描述
     description = ""
 
-    @classmethod
-    def randGen(cls):
-        bedrooms = randint(1, 5)
-        bathrooms = randint(1, 5)
-        carspaces = randint(0, 5)
-        building_area = randint(50, 500)
-        price = randint(10, 1000)
-        district = \
-            ["武侯区", "成华区", "锦江区", "青羊区", "金牛区", "龙泉驿区", "青白江区", "双流区", "郫都区", "新都区",
-             "温江区"][randint(0, 3)]
-        build_year = randint(0, 50)
-        decoration = randint(0, 3)
-        property_type = randint(1, 2)
-        distance_to_metro = randint(0, 1)
-        distance_to_school = randint(0, 1)
-        description = ""
-
+    def generate_property(self):
+        self.bedrooms = randint(1, 10)
+        self.bathrooms = randint(1, 5)
+        self.carspaces = randint(0, 2)
+        self.area = randint(10, 1000)
+        self.price = randint(10, 2000)
+        self.build_year = randint(1900, 2025)
+        self.decoration = choice(["清水", "简装", "精装"])
+        self.type = choice(["住宅", "公寓", "别墅"])
+        self.distance_to_metro = randint(1, 5000)
+        self.distance_to_school = randint(1, 5000)
+        self.floor = randint(1, 50)
+        l = Location()
+        self.province, self.city, self.district = l.randomLocation()

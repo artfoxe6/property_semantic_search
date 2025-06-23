@@ -1,8 +1,5 @@
-# This is a sample Python script.
-
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
-import json
+from ollama import ollama
+from property import Property
 
 
 def print_hi(name):
@@ -12,7 +9,7 @@ def print_hi(name):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    with open("pca.json", "r") as f:
-        locations = json.load(f)
-        for ps in locations.items():
-            print(ps.key, ps.value)
+    prop = Property()
+    prop.generate_property()
+    ollama.generate_description(prop)
+    print(prop.description)
