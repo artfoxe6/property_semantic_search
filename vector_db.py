@@ -1,0 +1,59 @@
+from pymilvus import MilvusClient, DataType
+
+
+class VectorDB:
+    client = None
+    db_name = "test"
+    collection_name = "house"
+    milvus_uri = "http://localhost:19530"
+
+    def get_client(self):
+        if self.client is None:
+            self.client = MilvusClient(uri=self.milvus_uri, db_name=self.db_name)
+        return self.client
+
+    def create_collection(self):
+        schema = MilvusClient.create_schema()
+
+        schema.add_field(field_name="my_id", datatype=DataType.INT64, is_primary=True, auto_id=True)
+        schema.add_field(field_name="bedrooms", datatype=DataType.INT8)
+        schema.add_field(field_name="bathrooms", datatype=DataType.INT8)
+        schema.add_field(field_name="area", datatype=DataType.FLOAT)
+        schema.add_field(field_name="price", datatype=DataType.FLOAT)
+        schema.add_field(field_name="location", datatype=DataType.VARCHAR, max_length=100)
+        schema.add_field(field_name="age", datatype=DataType.INT16)
+        schema.add_field(field_name="decoration", datatype=DataType.INT8)
+        schema.add_field(field_name="type", datatype=DataType.INT8)
+        schema.add_field(field_name="subway", datatype=DataType.INT8)
+        schema.add_field(field_name="description", datatype=DataType.VARCHAR, max_length=512)
+        schema.add_field(field_name="desc_vector", datatype=DataType.FLOAT_VECTOR, dim=768)
+
+        index_params = self.client.prepare_index_params()
+
+        index_params.add_index(
+            field_name="desc_vector",
+            index_name="desc_vector_index",
+            index_type="FLAT",  # https://milvus.io/docs/zh/index-explained.md
+            metric_type="L2"  # 度量类型，有多种可以对比效果 https://milvus.io/docs/zh/metric.md，可以考虑使用多种度量类型分别搜索，综合排序
+        )
+
+        self.client.create_collection(
+            collection_name=self.collection_name,
+            schema=schema,
+            index_params=index_params
+        )
+
+    def upsert(self, data):
+        self.client.upsert(
+            collection_name=self.collection_name,
+            fields_data=data
+        )
+
+    def search(self, vector, top_k=5):
+        results = self.client.search(
+            collection_name=self.collection_name,
+            query_vector=vector,
+            top_k=top_k,
+            metric_type="L2"
+        )
+        return results
