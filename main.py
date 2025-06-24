@@ -1,3 +1,5 @@
+from fontTools.misc.cython import returns
+
 from sbert import SentenceBert
 from ollama import ollama
 from property import Property
@@ -20,5 +22,5 @@ if __name__ == '__main__':
     vdb = VectorDB()
     vdb.create_collection()
     p_dict = prop.to_dict()
-    p_dict["desc_vector"] = SentenceBert.text2vector(prop)
+    p_dict["desc_vector"] = SentenceBert.text2vector(prop.description)
     vdb.upsert([p_dict])
