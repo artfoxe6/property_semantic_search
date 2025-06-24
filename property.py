@@ -1,8 +1,10 @@
+from datetime import datetime, timedelta
 from random import randint, choice
 from location import Location
 
 
 class Property:
+    id = 0
     # 卧室数
     bedrooms = 0
     # 浴室数
@@ -23,6 +25,8 @@ class Property:
     district = ""
     # 建筑年代
     build_year = 0
+    # 上市时间
+    list_at = ""
     # 装修等级
     decoration = "简装"
     # 房产类型
@@ -48,3 +52,28 @@ class Property:
         self.floor = randint(1, 50)
         l = Location()
         self.province, self.city, self.district = l.randomLocation()
+        current_date = datetime.now()
+        three_years_ago = current_date - timedelta(days=3 * 365)
+        random_date = three_years_ago + timedelta(days=randint(0, 1095))
+        self.list_at = random_date.strftime("%Y-%m-%d")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "bedrooms": self.bedrooms,
+            "bathrooms": self.bathrooms,
+            "carspaces": self.carspaces,
+            "build_year": self.build_year,
+            "decoration": self.decoration,
+            "type": self.type,
+            "distance_to_metro": self.distance_to_metro,
+            "distance_to_school": self.distance_to_school,
+            "floor": self.floor,
+            "province": self.province,
+            "city": self.city,
+            "district": self.district,
+            "price": self.price,
+            "area": self.area,
+            "description": self.description,
+            "list_at": self.list_at,
+        }

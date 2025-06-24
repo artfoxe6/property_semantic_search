@@ -38,6 +38,10 @@ class ollama:
         # 解析返回结果
         if response.status_code == 200:
             result = response.json()
-            print(result["response"])
+            # 去掉模型生成的思考部分 <think>
+            if "<think>" in result["response"]:
+                return result["response"].split("</think>")[1]
+            else:
+                return result["response"].split("</think>")[1]
         else:
-            print("请求失败，状态码：", response.status_code)
+            return ""

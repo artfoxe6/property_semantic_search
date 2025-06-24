@@ -1,5 +1,7 @@
+from sbert import SentenceBert
 from ollama import ollama
 from property import Property
+from vector_db import VectorDB
 
 
 def print_hi(name):
@@ -11,5 +13,12 @@ def print_hi(name):
 if __name__ == '__main__':
     prop = Property()
     prop.generate_property()
-    ollama.generate_description(prop)
-    print(prop.description)
+    description = ollama.generate_description(prop)
+    if description != "":
+        prop.description = description
+
+    vdb = VectorDB()
+    vdb.create_collection()
+    p_dict = prop.to_dict()
+    p_dict["desc_vector"] = SentenceBert.text2vector(prop)
+    vdb.upsert([p_dict])

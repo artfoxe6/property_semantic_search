@@ -3,28 +3,31 @@ from pymilvus import MilvusClient, DataType
 
 class VectorDB:
     client = None
-    db_name = "test"
-    collection_name = "house"
+    db_name = "default"
+    collection_name = "property"
     milvus_uri = "http://localhost:19530"
 
-    def get_client(self):
-        if self.client is None:
-            self.client = MilvusClient(uri=self.milvus_uri, db_name=self.db_name)
-        return self.client
-
+    def __init__(self):
+        self.client = MilvusClient(uri=self.milvus_uri, db_name=self.db_name)
     def create_collection(self):
         schema = MilvusClient.create_schema()
 
-        schema.add_field(field_name="my_id", datatype=DataType.INT64, is_primary=True, auto_id=True)
+        schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True, auto_id=True)
         schema.add_field(field_name="bedrooms", datatype=DataType.INT8)
         schema.add_field(field_name="bathrooms", datatype=DataType.INT8)
+        schema.add_field(field_name="carspaces", datatype=DataType.INT8)
+        schema.add_field(field_name="floor", datatype=DataType.INT8)
         schema.add_field(field_name="area", datatype=DataType.FLOAT)
         schema.add_field(field_name="price", datatype=DataType.FLOAT)
-        schema.add_field(field_name="location", datatype=DataType.VARCHAR, max_length=100)
-        schema.add_field(field_name="age", datatype=DataType.INT16)
-        schema.add_field(field_name="decoration", datatype=DataType.INT8)
-        schema.add_field(field_name="type", datatype=DataType.INT8)
-        schema.add_field(field_name="subway", datatype=DataType.INT8)
+        schema.add_field(field_name="province", datatype=DataType.VARCHAR, max_length=100)
+        schema.add_field(field_name="city", datatype=DataType.VARCHAR, max_length=100)
+        schema.add_field(field_name="district", datatype=DataType.VARCHAR, max_length=100)
+        schema.add_field(field_name="build_year", datatype=DataType.INT16)
+        schema.add_field(field_name="list_at", datatype=DataType.VARCHAR, max_length=100)
+        schema.add_field(field_name="decoration", datatype=DataType.VARCHAR, max_length=50)
+        schema.add_field(field_name="type", datatype=DataType.VARCHAR, max_length=50)
+        schema.add_field(field_name="distance_to_metro", datatype=DataType.FLOAT)
+        schema.add_field(field_name="distance_to_school", datatype=DataType.FLOAT)
         schema.add_field(field_name="description", datatype=DataType.VARCHAR, max_length=512)
         schema.add_field(field_name="desc_vector", datatype=DataType.FLOAT_VECTOR, dim=768)
 
@@ -46,7 +49,7 @@ class VectorDB:
     def upsert(self, data):
         self.client.upsert(
             collection_name=self.collection_name,
-            fields_data=data
+            data=data
         )
 
     def search(self, vector, top_k=5):
