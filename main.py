@@ -1,26 +1,51 @@
-from fontTools.misc.cython import returns
+import threading
+
+from sentence_transformers import SentenceTransformer
 
 from sbert import SentenceBert
 from ollama import ollama
 from property import Property
 from vector_db import VectorDB
 
+vdb = VectorDB
+model = SentenceTransformer('shibing624/text2vec-base-chinese')
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+# vdb.create_collection()
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
+def worker():
     prop = Property()
     prop.generate_property()
+    print("OK111")
     description = ollama.generate_description(prop)
+    print("OK222")
     if description != "":
         prop.description = description
 
-    vdb = VectorDB()
-    vdb.create_collection()
     p_dict = prop.to_dict()
-    p_dict["desc_vector"] = SentenceBert.text2vector(prop.description)
+    print("OK333")
+    p_dict["desc_vector"] = SentenceBert.text2vector(model, prop.description)
+    print("OK444")
     vdb.upsert([p_dict])
+    print("OK555")
+
+
+def prepare_data(num=100):
+    threads = []
+    for i in range(num):
+        thread = threading.Thread(target=worker)
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
+
+
+if __name__ == '__main__':
+    # prop = Property()
+    # prop.generate_property()
+    # description = ollama.generate_description(prop)
+    # print(description)
+    while True:
+        prepare_data(100)
+        print("prepare data 100")
