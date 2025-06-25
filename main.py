@@ -7,27 +7,21 @@ from ollama import ollama
 from property import Property
 from vector_db import VectorDB
 
-vdb = VectorDB
+vdb = VectorDB()
 model = SentenceTransformer('shibing624/text2vec-base-chinese')
 
-# vdb.create_collection()
+vdb.create_collection()
 
 
 def worker():
     prop = Property()
     prop.generate_property()
-    print("OK111")
-    description = ollama.generate_description(prop)
-    print("OK222")
-    if description != "":
-        prop.description = description
+    description = ollama.generate_description(prop.to_prompt())
+    prop.description = description[:1024]
 
     p_dict = prop.to_dict()
-    print("OK333")
     p_dict["desc_vector"] = SentenceBert.text2vector(model, prop.description)
-    print("OK444")
     vdb.upsert([p_dict])
-    print("OK555")
 
 
 def prepare_data(num=100):
@@ -44,8 +38,9 @@ def prepare_data(num=100):
 if __name__ == '__main__':
     # prop = Property()
     # prop.generate_property()
-    # description = ollama.generate_description(prop)
+    # description = ollama.generate_description(prop.to_prompt())
     # print(description)
+    # exit(0)
     while True:
         prepare_data(100)
         print("prepare data 100")
