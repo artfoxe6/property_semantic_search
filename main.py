@@ -7,8 +7,16 @@ from ollama import ollama
 from property import Property
 from vector_db import VectorDB
 
+# 训练教程？
+# https://huggingface.co/blog/train-sentence-transformers#trainer
+
+# 语义搜索模型排行榜
+# https://huggingface.co/spaces/mteb/leaderboard
+
 vdb = VectorDB()
-model = SentenceTransformer('shibing624/text2vec-base-chinese')
+# https://huggingface.co/models?pipeline_tag=sentence-similarity&language=zh&sort=trending
+# model = SentenceTransformer('shibing624/text2vec-base-chinese')
+model = SentenceTransformer('Alibaba-NLP/gte-multilingual-base',trust_remote_code= True)
 
 vdb.create_collection()
 
@@ -36,11 +44,15 @@ def prepare_data(num=100):
 
 
 if __name__ == '__main__':
-    # prop = Property()
-    # prop.generate_property()
+    prop = Property()
+    prop.generate_property()
+    print(prop.to_prompt())
+    print(SentenceBert.text2vector(model, prop.to_prompt()))
+    print(prop.to_prompt())
+    print(SentenceBert.text2vector(model, prop.to_prompt()))
     # description = ollama.generate_description(prop.to_prompt())
     # print(description)
-    # exit(0)
+    exit(0)
     while True:
         prepare_data(100)
         print("prepare data 100")
