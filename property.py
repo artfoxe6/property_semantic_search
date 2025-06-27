@@ -77,6 +77,7 @@ class Property:
             "description": self.description,
             "list_at": self.list_at,
         }
+
     def to_prompt(self) -> str:
         return f"""请根据以下房屋信息生成一段自然流畅、具有吸引力的中文房源介绍，用于展示在房地产网站中，字数控制在100字到150字之间：
                 - 房产类型：{self.type}
@@ -86,11 +87,27 @@ class Property:
                 - 车位数：{self.carspaces}个
                 - 楼层：{self.floor}层
                 - 建造年份：{self.build_year}年
+                - 上市时间：{self.list_at}
                 - 装修情况：{self.decoration}
                 - 所在省市：{self.province} {self.city} {self.district}
                 - 房屋总价：{self.price}万人民币
                 - 离地铁距离：{self.distance_to_metro}米
                 - 离学校距离：{self.distance_to_school}米
-                - 房屋描述补充：{self.description}
-                请综合这些信息生成一段吸引购房者兴趣的介绍，尽量突出亮点。
+                """
+
+    def combine_description(self) -> str:
+        return f"""
+                房产类型：{self.type}
+                房屋面积：{self.area}平方米
+                卧室数：{self.bedrooms}间
+                浴室数：{self.bathrooms}间
+                车位数：{self.carspaces}个
+                楼层：{self.floor}层
+                建造年份：{self.build_year}年
+                上市时间：{self.list_at}
+                装修情况：{self.decoration}
+                所在省市：{self.province} {self.city} {self.district}
+                房屋总价：{self.price}万人民币
+                离地铁距离：{self.distance_to_metro}米
+                离学校距离：{self.distance_to_school}米
                 """
