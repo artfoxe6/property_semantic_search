@@ -45,7 +45,7 @@ class Property:
         self.area = randint(10, 1000)
         self.price = randint(10, 2000)
         self.build_year = randint(1900, 2025)
-        self.decoration = choice(["清水", "简装", "精装"])
+        self.decoration = choice(["清水", "简单装修", "豪华装修"])
         self.type = choice(["住宅", "公寓", "别墅"])
         self.distance_to_metro = randint(1, 5000)
         self.distance_to_school = randint(1, 5000)
@@ -56,6 +56,7 @@ class Property:
         three_years_ago = current_date - timedelta(days=3 * 365)
         random_date = three_years_ago + timedelta(days=randint(0, 1095))
         self.list_at = random_date.strftime("%Y-%m-%d")
+        self.description = self.combine_description()
 
     def to_dict(self):
         return {

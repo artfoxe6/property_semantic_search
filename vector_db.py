@@ -4,7 +4,7 @@ from pymilvus import MilvusClient, DataType
 class VectorDB:
     client = None
     db_name = "default"
-    collection_name = "property"
+    collection_name = "properties"
     milvus_uri = "http://localhost:19530"
 
     def __init__(self):
@@ -29,14 +29,20 @@ class VectorDB:
         schema.add_field(field_name="distance_to_metro", datatype=DataType.FLOAT)
         schema.add_field(field_name="distance_to_school", datatype=DataType.FLOAT)
         schema.add_field(field_name="description", datatype=DataType.VARCHAR, max_length=1024)
-        schema.add_field(field_name="desc_vector", datatype=DataType.FLOAT_VECTOR, dim=768)
-        schema.add_field(field_name="desc_vector", datatype=DataType.FLOAT_VECTOR, dim=768)
+        schema.add_field(field_name="desc_vector1", datatype=DataType.FLOAT_VECTOR, dim=768)
+        schema.add_field(field_name="desc_vector2", datatype=DataType.FLOAT_VECTOR, dim=896)
 
         index_params = self.client.prepare_index_params()
 
         index_params.add_index(
-            field_name="desc_vector",
-            index_name="desc_vector_index",
+            field_name="desc_vector1",
+            index_name="desc_vector_index1",
+            index_type="FLAT",  # https://milvus.io/docs/zh/index-explained.md
+            metric_type="L2"  # 度量类型，有多种可以对比效果 https://milvus.io/docs/zh/metric.md，可以考虑使用多种度量类型分别搜索，综合排序
+        )
+        index_params.add_index(
+            field_name="desc_vector2",
+            index_name="desc_vector_index2",
             index_type="FLAT",  # https://milvus.io/docs/zh/index-explained.md
             metric_type="L2"  # 度量类型，有多种可以对比效果 https://milvus.io/docs/zh/metric.md，可以考虑使用多种度量类型分别搜索，综合排序
         )

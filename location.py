@@ -20,7 +20,9 @@ class Location:
         return self.locations[province][city]
 
     def randomLocation(self) -> tuple[str, str, str]:
-        p = random.choice(self.getProvinces())
-        c = random.choice(self.getCities(p))
+        # p = random.choice(self.getProvinces())
+        p = random.choice(["四川省"])
+        # c = random.choice(self.getCities(p))
+        c = random.choice(["成都市"])
         d = random.choice(self.getDistricts(p, c))
         return p, c, d
