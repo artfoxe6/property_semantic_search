@@ -1,4 +1,8 @@
 # https://milvus.io/docs/zh/milvus_backup_cli.md
+# 1, 在source 机器执行 ./milvus-backup create -n prop
+# 2, 在 minio admin 界面下载backup文件夹
+# 3, 在 destination 机器的minio admin 界面上传解压后的backup文件夹
+# 4, 在 destination 机器执行 ./milvus-backup restore --restore_index -n prop
 # Configures the system log output.
 log:
   level: info # Only supports debug, info, warn, error, panic, or fatal. Default 'info'.
