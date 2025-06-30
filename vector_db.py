@@ -9,10 +9,13 @@ class VectorDB:
 
     def __init__(self):
         self.client = MilvusClient(uri=self.milvus_uri, db_name=self.db_name)
+        if not self.client.has_collection(self.collection_name):
+            self.create_collection()
+
     def create_collection(self):
         schema = MilvusClient.create_schema()
 
-        schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True, auto_id=True)
+        schema.add_field(field_name="id", datatype=DataType.INT64, is_primary=True)
         schema.add_field(field_name="bedrooms", datatype=DataType.INT8)
         schema.add_field(field_name="bathrooms", datatype=DataType.INT8)
         schema.add_field(field_name="carspaces", datatype=DataType.INT8)

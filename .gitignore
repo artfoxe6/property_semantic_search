@@ -199,3 +199,4 @@ milvus-backup
 backup/
 .DS_Store
 volumes/
+property.db
