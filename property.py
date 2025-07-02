@@ -34,24 +34,44 @@ class Property:
         # 描述信息
         self.description = description
 
-    def generate_property(self, id=0, bedrooms=0, bathrooms=0, carspaces=0, floor=0, area=0, price=0, province="", city="", district="", build_year=0, list_at="", decoration="简装", type="住宅", distance_to_metro=0, distance_to_school=0, description=""):
-        self.id = id
-        self.bedrooms = bedrooms
-        self.bathrooms = bathrooms
-        self.carspaces = carspaces
-        self.floor = floor
-        self.area = area
-        self.price = price
-        self.province = province
-        self.city = city
-        self.district = district
-        self.build_year = build_year
-        self.list_at = list_at
-        self.decoration = decoration
-        self.type = type
-        self.distance_to_metro = distance_to_metro
-        self.distance_to_school = distance_to_school
-        self.description = description
+    def generate_property(self):
+        self.bedrooms = randint(1, 6)
+
+        # 浴室数一般少于或等于卧室数，最多为卧室数
+        if self.bedrooms == 1:
+            self.bathrooms = 1
+        else:
+            self.bathrooms = randint(1, min(self.bedrooms, 3))  # 3间以上浴室较为稀有
+
+        # 车位数与卧室略有关联
+        self.carspaces = randint(0, 1 if self.bedrooms <= 2 else 2)
+
+        # 房屋面积与房间数有关，每间房间大约 20~50 平米加上公共空间
+        self.area = randint(self.bedrooms * 30, self.bedrooms * 60)
+
+        # 价格与面积略有关联，均价大约 0.8~2 万每平米
+        avg_price_per_m2 = randint(8000, 20000)
+        self.price = int((self.area * avg_price_per_m2) / 10000)  # 单位为“万”
+
+        self.build_year = randint(2000, datetime.now().year)
+        self.decoration = choice(["清水", "简单装修", "豪华装修"])
+        self.type = choice(["住宅", "公寓", "别墅"])
+
+        # 距地铁和学校距离：较远也不会超过 5000 米
+        self.distance_to_metro = randint(50, 3000)
+        self.distance_to_school = randint(50, 3000)
+
+        self.floor = randint(1, 30 if self.type != "别墅" else 3)
+
+        l = Location()
+        self.province, self.city, self.district = l.randomLocation()
+
+        current_date = datetime.now()
+        three_years_ago = current_date - timedelta(days=3 * 365)
+        random_date = three_years_ago + timedelta(days=randint(0, 1095))
+        self.list_at = random_date.strftime("%Y-%m-%d")
+
+        self.description = self.combine_description()
 
     def to_dict(self):
         return {
