@@ -67,6 +67,17 @@ def sync_to_milvus():
             vdb.upsert([p_dict])
             last_id = prop.id
 
+def gen_training_data():
+    page_size = 1000
+    last_id = 0
+    while True:
+        props = sdb.list(last_id, page_size)
+        if not props:
+            break
+        for prop in props:
+
+            last_id = prop.id
+
 
 
 if __name__ == '__main__':
@@ -79,6 +90,9 @@ if __name__ == '__main__':
     elif step == "train":
         pass
     else:
+        p = Property()
+        p.generate_property()
+        print(p.to_prompt())
         print("Usage: python main.py prepare | train | test")
     # prop = Property()
     # prop.generate_property()

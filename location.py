@@ -26,3 +26,14 @@ class Location:
         c = random.choice(["成都市"])
         d = random.choice(self.getDistricts(p, c))
         return p, c, d
+
+    def randomLocationExclude(self,district) -> tuple[str, str, str]:
+        # p = random.choice(self.getProvinces())
+        p = random.choice(["四川省"])
+        # c = random.choice(self.getCities(p))
+        if random.randint(1, 10) == 1:
+            c = random.choice(self.getCities(p))
+        else:
+            c = random.choice(["成都市"])
+        d = random.choice([di for di in self.getDistricts(p, c) if di != district])
+        return p, c, d

@@ -1,3 +1,4 @@
+import random
 from datetime import datetime, timedelta
 from random import randint, choice
 from location import Location
@@ -113,3 +114,191 @@ class Property:
 
     def combine_description(self) -> str:
         return f"""房产类型：{self.type},房屋面积：{self.area}平方米,卧室数：{self.bedrooms}间,浴室数：{self.bathrooms}间,车位数：{self.carspaces}个,楼层：{self.floor}层,建造年份：{self.build_year}年,上市时间：{self.list_at},装修情况：{self.decoration},所在省市：{self.province} {self.city} {self.district},房屋总价：{self.price}万人民币,离地铁距离：{self.distance_to_metro}米,离学校距离：{self.distance_to_school}米"""
+
+    @classmethod
+    def up_round_to_5(cls, num):
+        if num % 5 == 0:
+            return num
+        else:
+            return ((num // 5) + 1) * 5
+
+    def property_to_query_texts(self):
+        # 基础搜索意图
+        queries = [
+            (1, f"{self.city}{self.district}有哪些{self.bedrooms}室{self.bathrooms}卫的房子？价格大概在{self.price}万以内。"),
+            (2, f"找个{self.area}平左右的{self.bedrooms}房，在{self.city}{self.district}。"),
+            (3,f"{self.city}有没有{self.bedrooms}房，{self.area}平米，预算{self.price}万左右的房子？")
+        ]
+
+        # 小户型场景
+        if self.area <= 60:
+            queries.append((4,f"有没有{self.city}{self.district}的{self.get_synonyms('area', self.area)}房子？{self.area}平以内"))
+
+        # 价格需求
+        if self.price < 70:
+            queries.append((5,f"预算不高，找套{self.city}{self.district}的{self.up_round_to_5(self.price)}内的房子。"))
+
+        # 大户型需求
+        if self.area >= 120:
+            queries.append((6,f"想找一套{self.bedrooms}房的{self.get_synonyms('area', self.area)}，面积{self.area}平以上，适合一家{self.bedrooms}口的。"))
+            queries.append((7,f"{self.city}{self.district}有没有{self.bedrooms}房{self.get_synonyms('area', self.area)}，安静，适合自住的？"))
+
+        # 地铁需求
+        if self.distance_to_metro and self.distance_to_metro <= 800:
+            queries.append((8,f"地铁附近的房子有推荐吗？在{self.city}{self.district}，交通方便一点的。"))
+            queries.append((9,f"{self.city} {self.bedrooms}房 {self.area}平 地铁附近"))
+
+        # 学区房需求
+        if self.distance_to_school and self.distance_to_school <= 1000:
+            queries.append((10,f"想买套靠近学校的房子，最好在{self.city}{self.district}，适合孩子上学。"))
+
+        # 车位需求
+        if self.carspaces > 0:
+            queries.append((11,f"有没有带车位的{self.bedrooms}房推荐？最好在{self.city}{self.district}附近。"))
+
+        # 新房偏好
+        if self.build_year > 2015:
+            queries.append((12,f"在{self.city}{self.district}找个{self.build_year}年的{self.get_synonyms('build_year', self.build_year)}"))
+
+        return queries
+
+    def gen_negative_property(self, group, num_random=2, num_hard=2):
+        if group == 1:
+            return self.negative_property()
+        elif group == 2:
+            return self.negative_property()
+        elif group == 3:
+            return self.negative_property()
+        elif group == 4:
+            return self.negative_property()
+        elif group == 5:
+            return self.negative_property()
+        elif group == 6:
+            return self.negative_property()
+        elif group == 7:
+            return self.negative_property()
+        elif group == 8:
+            return self.negative_property()
+        elif group == 9:
+            return self.negative_property()
+        elif group == 10:
+            return self.negative_property()
+        elif group == 11:
+            return self.negative_property()
+        elif group == 12:
+            return self.negative_property()
+        else:
+            raise ValueError("Invalid group")
+
+    def negative_property(self, bed, bath, car, area, price, build_year, decoration, type):
+
+        if self.bedrooms is not None:
+            self.bedrooms = bed + choice([-3, -2, -1, 1, 2, 3])
+        if self.bathrooms is not None:
+            self.bathrooms = bath + choice([-2,-1,1,2])
+        if self.carspaces is not None:
+            self.carspaces = car + choice([-2,-1,1,2])
+        if self.area is not None:
+            self.area = area + choice([randint(10,100), randint(-50,10)])
+            if self.area < 10:
+                self.area = randint(0,10)
+        if self.price is not None:
+            self.price = price + choice([randint(10,100), randint(-50,10)])
+            if self.price < 10:
+                self.price = randint(0,10)
+        if self.build_year is not None:
+            self.build_year = build_year + randint(-30,-5)
+
+        self.decoration = choice(["清水", "简单装修", "豪华装修"])
+        if type is not None:
+            self.type = random.choice([t for t in ["住宅", "公寓", "别墅"] if t != self.type])
+
+        if self.distance_to_metro is not None:
+            self.distance_to_metro = randint(1500,3000)
+        if self.distance_to_school is not None:
+            self.distance_to_school = randint(1500,3000)
+
+        self.floor = randint(1, 30 if self.type != "别墅" else 3)
+
+        l = Location()
+        self.province, self.city, self.district = l.randomLocationExclude(self.district)
+
+        current_date = datetime.now()
+        three_years_ago = current_date - timedelta(days=3 * 365)
+        random_date = three_years_ago + timedelta(days=randint(0, 1095))
+        self.list_at = random_date.strftime("%Y-%m-%d")
+
+        self.description = self.combine_description()
+
+    def get_synonyms(self, field, value):
+        property_synonym_map = {
+            "bedrooms": {
+                "ranges": [
+                    {"min": 0, "max": 1, "synonyms": ["单间", "一室一厅"]},
+                    {"min": 2, "max": 2, "synonyms": ["两居室", "两房"]},
+                    {"min": 3, "max": 3, "synonyms": ["三居室", "三房"]},
+                    {"min": 4, "max": 100, "synonyms": ["四房以上", "大户型"]}
+                ]
+            },
+            "bathrooms": {
+                "ranges": [
+                    {"min": 1, "max": 1, "synonyms": ["一卫"]},
+                    {"min": 2, "max": 2, "synonyms": ["双卫", "两卫"]},
+                    {"min": 3, "max": 100, "synonyms": ["三卫以上"]}
+                ]
+            },
+            "carspaces": {
+                "ranges": [
+                    {"min": 0, "max": 0, "synonyms": ["无车位"]},
+                    {"min": 1, "max": 1, "synonyms": ["带车位"]},
+                    {"min": 2, "max": 100, "synonyms": ["双车位", "多个车位"]}
+                ]
+            },
+            "floor": {
+                "ranges": [
+                    {"min": 1, "max": 3, "synonyms": ["低楼层"]},
+                    {"min": 4, "max": 7, "synonyms": ["中楼层"]},
+                    {"min": 8, "max": 100, "synonyms": ["高楼层"]}
+                ]
+            },
+            "area": {
+                "ranges": [
+                    {"min": 0, "max": 60, "synonyms": ["小户型", "紧凑型"]},
+                    {"min": 60, "max": 120, "synonyms": ["中户型", "舒适型"]},
+                    {"min": 120, "max": 10000, "synonyms": ["大户型", "宽敞"]}
+                ]
+            },
+            "price": {
+                "ranges": [
+                    {"min": 0, "max": 100, "synonyms": ["百万元以内", "总价低"]},
+                    {"min": 100, "max": 300, "synonyms": ["总价适中", "百万元区间"]},
+                    {"min": 300, "max": 10000, "synonyms": ["高端房源", "豪宅"]}
+                ]
+            },
+            "build_year": {
+                "ranges": [
+                    {"min": 1900, "max": 1999, "synonyms": ["老房子"]},
+                    {"min": 2000, "max": 2015, "synonyms": ["次新房"]},
+                    {"min": 2016, "max": 2100, "synonyms": ["新房"]}
+                ]
+            },
+            "distance_to_metro": {
+                "ranges": [
+                    {"min": 0, "max": 500, "synonyms": ["地铁房", "靠近地铁"]},
+                    {"min": 500, "max": 1200, "synonyms": ["步行可达地铁", "附近有地铁"]}
+                ]
+            },
+            "distance_to_school": {
+                "ranges": [
+                    {"min": 0, "max": 500, "synonyms": ["学区房", "临近学校"]},
+                    {"min": 500, "max": 1500, "synonyms": ["步行可达学校"]}
+                ]
+            }
+        }
+
+        mapping = property_synonym_map.get(field, {})
+        if "ranges" in mapping:
+            for r in mapping["ranges"]:
+                if r["min"] <= value <= r["max"]:
+                    return choice(r["synonyms"])
+        return ""
