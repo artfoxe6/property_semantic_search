@@ -31,9 +31,12 @@ class Location:
         # p = random.choice(self.getProvinces())
         p = random.choice(["四川省"])
         # c = random.choice(self.getCities(p))
-        if random.randint(1, 10) == 1:
+        if random.randint(1, 100) == 1:
             c = random.choice(self.getCities(p))
         else:
             c = random.choice(["成都市"])
-        d = random.choice([di for di in self.getDistricts(p, c) if di != district])
+        di = [di for di in self.getDistricts(p, c) if di != district]
+        if random.randint(1, 20) == 1:
+            di.append( district)
+        d = random.choice(di)
         return p, c, d
