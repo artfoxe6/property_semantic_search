@@ -129,71 +129,71 @@ class Property:
     def property_to_query_texts(self):
         # 基础搜索意图
         queries = [
-            ("1", f"{self.district}有哪些{self.bedrooms}室{self.bathrooms}卫的房子？价格大概在{self.price}万以内。"),
-            ("2", f"找个{self.area}平左右的{self.bedrooms}房，在{self.district}。"),
-            ('3', f"{self.district}有没有{self.bedrooms}房，{self.area}平米，预算{self.price}万左右的房子？")
+            (1, f"{self.district}有哪些{self.bedrooms}室{self.bathrooms}卫的房子？价格大概在{self.price}万以内。"),
+            (2, f"找个{self.area}平左右的{self.bedrooms}房，在{self.district}。"),
+            (3, f"{self.district}有没有{self.bedrooms}房，{self.area}平米，预算{self.price}万左右的房子？")
         ]
 
         # 小户型场景
         if self.area <= 60:
             queries.append(
-                ("4", f"有没有{self.district}的{self.get_synonyms('area', self.area)}房子？{self.area}平以内"))
+                (4, f"有没有{self.district}的{self.get_synonyms('area', self.area)}房子？{self.area}平以内"))
 
         # 价格需求
         if self.price < 70:
-            queries.append(("5", f"预算不高，找套{self.district}的{self.up_round_to_5(self.price)}内的房子。"))
+            queries.append((5, f"预算不高，找套{self.district}的{self.up_round_to_5(self.price)}内的房子。"))
 
         # 大户型需求
         if self.area >= 120:
-            queries.append(("6",
+            queries.append((6,
                             f"想找一套{self.bedrooms}房的{self.get_synonyms('area', self.area)}，面积{self.area}平以上，适合一家{self.bedrooms}口的。"))
-            queries.append(("7",
+            queries.append((7,
                             f"{self.district}有没有{self.bedrooms}房{self.get_synonyms('area', self.area)}，安静，适合自住的？"))
 
         # 地铁需求
         if self.distance_to_metro and self.distance_to_metro <= 1000:
-            queries.append(("8", f"地铁附近的房子有推荐吗？在{self.district}，交通方便一点的。"))
-            queries.append(("9", f"{self.district} {self.bedrooms}房 {self.area}平 地铁附近"))
+            queries.append((8, f"地铁附近的房子有推荐吗？在{self.district}，交通方便一点的。"))
+            queries.append((9, f"{self.district} {self.bedrooms}房 {self.area}平 地铁附近"))
 
         # 学区房需求
         if self.distance_to_school and self.distance_to_school <= 1000:
-            queries.append(("10", f"想买套靠近学校的房子，最好在{self.district}，适合孩子上学。"))
+            queries.append((10, f"想买套靠近学校的房子，最好在{self.district}，适合孩子上学。"))
 
         # 车位需求
         if self.carspaces > 0:
-            queries.append(("11", f"有没有带车位的{self.bedrooms}房推荐？最好在{self.district}附近。"))
+            queries.append((11, f"有没有带车位的{self.bedrooms}房推荐？最好在{self.district}附近。"))
 
         # 新房偏好
         if self.build_year > 2015:
-            queries.append(("12",
+            queries.append((12,
                             f"在{self.district}找个{self.build_year}年的{self.get_synonyms('build_year', self.build_year)}"))
 
         return queries
 
     def gen_negative_property(self, group):
-        if group == "1":
+        if group == 1:
             return self.negative_property_v2(["district","bed","bath","price"])
-        elif group == "2":
+        elif group == 2:
             return self.negative_property_v2(["district","bed","area"])
-        elif group == "3":
+        elif group == 3:
             return self.negative_property_v2(["district","bed","area","price"])
-        elif group == "4":
+        elif group == 4:
             return self.negative_property_v2(["district","area"], "lt")
-        elif group == "5":
+        elif group == 5:
             return self.negative_property_v2(["district","price"], "lt")
-        elif group == "6":
+        elif group == 6:
             return self.negative_property_v2(["bed","area"],"gt")
-        elif group == "7":
+        elif group == 7:
             return self.negative_property_v2(["district","bed","area"],"gt")
-        elif group == "8":
+        elif group == 8:
             return self.negative_property_v2(["district","dis_m"])
-        elif group == "9":
+        elif group == 9:
             return self.negative_property_v2(["district","bed", "dis_m", "area"])
-        elif group == "10":
+        elif group == 10:
             return self.negative_property_v2(["district","dis_s"])
-        elif group == "11":
+        elif group == 11:
             return self.negative_property_v2(["district","bed", "car"])
-        elif group == "12":
+        elif group == 12:
             return self.negative_property_v2(["district","build_year"])
         else:
             raise ValueError("Invalid group")
