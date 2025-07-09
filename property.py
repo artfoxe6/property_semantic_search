@@ -129,74 +129,119 @@ class Property:
     def property_to_query_texts(self):
         # 基础搜索意图
         queries = [
-            (1, f"{self.city}{self.district}有哪些{self.bedrooms}室{self.bathrooms}卫的房子？价格大概在{self.price}万以内。"),
-            (2, f"找个{self.area}平左右的{self.bedrooms}房，在{self.city}{self.district}。"),
+            (1, f"{self.district}有哪些{self.bedrooms}室{self.bathrooms}卫的房子？价格大概在{self.price}万以内。"),
+            (2, f"找个{self.area}平左右的{self.bedrooms}房，在{self.district}。"),
             (3, f"{self.district}有没有{self.bedrooms}房，{self.area}平米，预算{self.price}万左右的房子？")
         ]
 
         # 小户型场景
         if self.area <= 60:
             queries.append(
-                (4, f"有没有{self.city}{self.district}的{self.get_synonyms('area', self.area)}房子？{self.area}平以内"))
+                (4, f"有没有{self.district}的{self.get_synonyms('area', self.area)}房子？{self.area}平以内"))
 
         # 价格需求
         if self.price < 70:
-            queries.append((5, f"预算不高，找套{self.city}{self.district}的{self.up_round_to_5(self.price)}内的房子。"))
+            queries.append((5, f"预算不高，找套{self.district}的{self.up_round_to_5(self.price)}内的房子。"))
 
         # 大户型需求
         if self.area >= 120:
             queries.append((6,
                             f"想找一套{self.bedrooms}房的{self.get_synonyms('area', self.area)}，面积{self.area}平以上，适合一家{self.bedrooms}口的。"))
             queries.append((7,
-                            f"{self.city}{self.district}有没有{self.bedrooms}房{self.get_synonyms('area', self.area)}，安静，适合自住的？"))
+                            f"{self.district}有没有{self.bedrooms}房{self.get_synonyms('area', self.area)}，安静，适合自住的？"))
 
         # 地铁需求
-        if self.distance_to_metro and self.distance_to_metro <= 800:
-            queries.append((8, f"地铁附近的房子有推荐吗？在{self.city}{self.district}，交通方便一点的。"))
+        if self.distance_to_metro and self.distance_to_metro <= 1000:
+            queries.append((8, f"地铁附近的房子有推荐吗？在{self.district}，交通方便一点的。"))
             queries.append((9, f"{self.district} {self.bedrooms}房 {self.area}平 地铁附近"))
 
         # 学区房需求
         if self.distance_to_school and self.distance_to_school <= 1000:
-            queries.append((10, f"想买套靠近学校的房子，最好在{self.city}{self.district}，适合孩子上学。"))
+            queries.append((10, f"想买套靠近学校的房子，最好在{self.district}，适合孩子上学。"))
 
         # 车位需求
         if self.carspaces > 0:
-            queries.append((11, f"有没有带车位的{self.bedrooms}房推荐？最好在{self.city}{self.district}附近。"))
+            queries.append((11, f"有没有带车位的{self.bedrooms}房推荐？最好在{self.district}附近。"))
 
         # 新房偏好
         if self.build_year > 2015:
             queries.append((12,
-                            f"在{self.city}{self.district}找个{self.build_year}年的{self.get_synonyms('build_year', self.build_year)}"))
+                            f"在{self.district}找个{self.build_year}年的{self.get_synonyms('build_year', self.build_year)}"))
 
         return queries
 
     def gen_negative_property(self, group):
         if group == 1:
-            return self.negative_property(district=self.district, bed=self.bedrooms, bath=self.bathrooms, price=self.price)
+            return self.negative_property_v2(["district","bed","bath","price"])
         elif group == 2:
-            return self.negative_property(district=self.district, area=self.area, bed=self.bedrooms)
+            return self.negative_property_v2(["district","bed","area"])
         elif group == 3:
-            return self.negative_property(district=self.district, bed=self.bedrooms, area=self.area, price=self.price)
+            return self.negative_property_v2(["district","bed","area","price"])
         elif group == 4:
-            return self.negative_property(district=self.district, area=self.area)
+            return self.negative_property_v2(["district","area"], "lt")
         elif group == 5:
-            return self.negative_property(district=self.district, price=self.price)
+            return self.negative_property_v2(["district","price"], "lt")
         elif group == 6:
-            return self.negative_property(bed=self.bedrooms, area=self.area)
+            return self.negative_property_v2(["bed","area"],"gt")
         elif group == 7:
-            return self.negative_property(district=self.district, bed=self.bedrooms, area=self.area)
+            return self.negative_property_v2(["district","bed","area"],"gt")
         elif group == 8:
-            return self.negative_property(district=self.district, dis_m=self.distance_to_metro)
+            return self.negative_property_v2(["district","dis_m"])
         elif group == 9:
-            return self.negative_property(district=self.district, bed=self.bedrooms, dis_m=self.distance_to_metro, area=self.area)
+            return self.negative_property_v2(["district","bed", "dis_m", "area"])
         elif group == 10:
-            return self.negative_property(district=self.district, dis_s=self.distance_to_school)
+            return self.negative_property_v2(["district","dis_s"])
         elif group == 11:
-            return self.negative_property(district=self.district, bed=self.bedrooms, car=self.carspaces)
+            return self.negative_property_v2(["district","bed", "car"])
         elif group == 12:
-            return self.negative_property(district=self.district, b_y=self.build_year)
+            return self.negative_property_v2(["district","build_year"])
         else:
             raise ValueError("Invalid group")
+
+    # 构造负样本
+    def negative_property_v2(self, mask=None, eq = "lt"):
+        if mask is None:
+            mask = []
+        l = Location()
+        p = copy.deepcopy(self)
+        # mask中可能指定4个条件用来生成负样本，但是随机取部分条件使用
+        # mask = random.sample(mask, randint(1, len(mask)))
+        for m in mask:
+            if m == 'bed':
+                p.bedrooms = choice([x for x in range(1,7) if x != self.bedrooms])
+            elif m == 'bath':
+                p.bathrooms = choice([x for x in range(1,4) if x != self.bathrooms])
+            elif m == 'car':
+                p.carspaces = 0
+            elif m == 'area':
+                if eq == "lt":
+                    p.area = self.area + choice([x for x in range(10, self.area) if x != 0])
+                elif eq == "gt":
+                    p.area = self.area - choice([x for x in range(10, self.area-10) if x != 0])
+                else:
+                    p.area = self.area + choice([x for x in range(-self.area + 10, self.area + 1) if x != 0])
+            elif m == 'price':
+                if eq == "lt":
+                    p.price = self.price + choice([x for x in range(10, self.price) if x != 0])
+                elif eq == "gt":
+                    p.price = self.price - choice([x for x in range(-self.price + 10, -10) if x != 0])
+                else:
+                    p.price = self.price + choice([x for x in range(-self.price + 10, self.price+1) if x != 0])
+            elif m == 'type':
+                p.type = choice([x for x in ["住宅", "公寓", "别墅"] if x != self.type])
+            elif m == 'dis_m':
+                p.distance_to_metro = randint(1500, 3000)
+            elif m == 'dis_s':
+                p.distance_to_school = randint(1500, 3000)
+            elif m == 'build_year':
+                p.build_year = randint(1980, 2010)
+            elif m == 'district':
+                p.district = l.randomDistrict(self.district)
+        p.description = self.combine_description()
+        return p.description
+
+
+
 
     def negative_property(self, district = None, bed=None, bath=None, car=None, area=None, price=None, b_y=None, type=None, dis_m=None,
                           dis_s=None,compare=None):
@@ -257,7 +302,7 @@ class Property:
         else:
             p.province, p.city, p.district = self.province, self.city, self.district
 
-        self.description = self.combine_description()
+        p.description = self.combine_description()
 
     def get_synonyms(self, field, value):
         property_synonym_map = {

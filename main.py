@@ -1,3 +1,4 @@
+import csv
 import sys
 import threading
 
@@ -70,14 +71,21 @@ def sync_to_milvus():
 def gen_training_data():
     page_size = 1000
     last_id = 0
+    header = ["query", "positive", "negative"]
+    fp = open("trandata.csv", "w", newline="", encoding="utf-8")
+    writer = csv.writer(fp)
+    writer.writerow(header)
     while True:
         props = sdb.list(last_id, page_size)
         if not props:
             break
         for prop in props:
-
-            last_id = prop.id
-
+            queries = prop.property_to_query_texts()
+            for query in queries:
+                negative = prop.gen_negative_property(query[0])
+                writer.writerow([query[1], prop.description, negative])
+                last_id = prop.id
+    fp.close()
 
 
 if __name__ == '__main__':

@@ -40,3 +40,9 @@ class Location:
             di.append( district)
         d = random.choice(di)
         return p, c, d
+
+    def randomCity(self, c) -> str:
+        return random.choice([x for x in self.getCities("四川省") if x != c])
+
+    def randomDistrict(self,d) -> str:
+        return random.choice([x for x in self.getDistricts("四川省", "成都市") if x != d])
