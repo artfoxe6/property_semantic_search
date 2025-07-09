@@ -95,6 +95,8 @@ if __name__ == '__main__':
         random_property_to_db(500000)
     elif step == "sync":
         sync_to_milvus()
+    elif step == "gen_tran_data":
+        gen_training_data()
     elif step == "train":
         pass
     else:
