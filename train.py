@@ -1,152 +1,112 @@
-import sqlite3
-
-from property import Property
-
-import random
-
-
-def property_to_random_text(prop: Property):
-    # 模板：基础信息（总是适用）
-    templates = [
-        f"{prop.city}{prop.district}在售一套{prop.bedrooms}室{prop.bathrooms}卫{prop.type}，{prop.area}㎡，售价{prop.price}万，{prop.decoration}，位于第{prop.floor}层。",
-        f"{prop.city}{prop.district}住宅，{prop.bedrooms}房{prop.area}㎡，总价{prop.price}万，{prop.decoration}装修。"]
-
-    # 小户型推荐（面积 <= 60）
-    if prop.area <= 60:
-        templates.append(
-            f"{prop.city}{prop.district}刚需小户型，{prop.bedrooms}室{prop.area}㎡，总价{prop.price}万，地铁{prop.distance_to_metro}米内，适合单身或情侣。"
-        )
-
-    # 大户型推荐（面积 >= 100）
-    if prop.area >= 100:
-        templates.append(
-            f"{prop.city}{prop.district}{prop.bedrooms}房大户型，{prop.area}㎡宽敞空间，适合大家庭，总价{prop.price}万，生活舒适。"
-        )
-
-    # 地铁房（地铁距离 <= 800 米）
-    if prop.distance_to_metro and prop.distance_to_metro <= 800:
-        templates.append(
-            f"{prop.city}{prop.district}地铁口好房，{prop.area}㎡，距离地铁仅{prop.distance_to_metro}米，售价{prop.price}万，通勤方便。"
-        )
-
-    # 学区房（距离学校 <= 1000 米）
-    if prop.distance_to_school and prop.distance_to_school <= 1000:
-        templates.append(
-            f"{prop.city}{prop.district}学区优选，距离学校{prop.distance_to_school}米，{prop.bedrooms}室，{prop.area}㎡，总价{prop.price}万，教育资源便利。"
-        )
-
-    # 有车位
-    if prop.carspaces > 0:
-        templates.append(
-            f"{prop.city}{prop.district}{prop.bedrooms}房带车位，{prop.area}㎡，{prop.decoration}装修，售价{prop.price}万，停车无忧。"
-        )
-
-    # 新房（2015年及以后）
-    if prop.build_year and prop.build_year >= 2015:
-        templates.append(
-            f"{prop.city}{prop.district}{prop.build_year}年建成住宅，{prop.bedrooms}室{prop.area}㎡，售价{prop.price}万，社区环境新颖。"
-        )
-
-    # 高性价比（价格 / 面积 < 1 万/㎡）
-    if prop.area > 0 and prop.price / prop.area < 1:
-        templates.append(
-            f"{prop.city}{prop.district}性价比好房，{prop.area}㎡仅售{prop.price}万，{prop.bedrooms}房，居住投资两相宜。"
-        )
-    return random.choice(templates)
+import os
+import pandas as pd
+from sentence_transformers import SentenceTransformer, models, losses, InputExample, evaluation, SentencesDataset
+from torch.utils.data import DataLoader
+from datetime import datetime
+import logging
 
 
-def property_to_query_texts(prop: Property):
-    queries = [
-        f"{prop.city}{prop.district}有哪些{prop.bedrooms}室{prop.bathrooms}卫的房子？价格大概在{prop.price}万以内。",
-        f"找个{prop.area}平左右的{prop.bedrooms}房，在{prop.city}{prop.district}，装修不要太差。",
-        f"{prop.city}有没有{prop.bedrooms}房，{prop.area}平米，预算{prop.price}万左右的房子？"]
+def load_triplet_data(csv_path):
+    df = pd.read_csv(csv_path)
+    examples = []
+    for _, row in df.iterrows():
+        examples.append(InputExample(texts=[row['query'], row['positive'], row['negative']]))
+    return examples
 
-    # 1. 基础搜索意图
 
-    # 2. 小户型场景
-    if prop.area <= 60:
-        queries.append(f"有没有{prop.city}{prop.district}的小户型房子？60平以内，适合一个人住的。")
-        queries.append(f"预算不高，找套靠近地铁的{prop.bedrooms}房小户型。")
+def load_dev_pairs(dev_path):
+    df = pd.read_csv(dev_path)
+    examples = []
+    for _, row in df.iterrows():
+        examples.append(InputExample(texts=[row['query'], row['positive']], label=1.0))
+    return examples
 
-    # 3. 大户型需求
-    if prop.area >= 100:
-        queries.append(f"想找一套{prop.bedrooms}房的大户型，面积100平以上，适合一家四口的。")
-        queries.append(f"{prop.city}{prop.district}有没有三房大面积户型，安静，适合自住的？")
 
-    # 4. 地铁需求
-    if prop.distance_to_metro and prop.distance_to_metro <= 800:
-        queries.append(f"地铁附近的房子有推荐吗？在{prop.city}{prop.district}，交通方便一点的。")
-        queries.append(f"{prop.city} {prop.bedrooms}房 {prop.area}平 地铁附近")
+def build_model(pretrained_model='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'):
+    word_embedding_model = models.Transformer(pretrained_model)
+    pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
+    model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
+    return model
 
-    # 5. 学区房需求
-    if prop.distance_to_school and prop.distance_to_school <= 1000:
-        queries.append(f"想买套靠近学校的房子，最好在{prop.city}{prop.district}，适合孩子上学。")
 
-    # 6. 车位需求
-    if prop.carspaces > 0:
-        queries.append(f"有没有带车位的{prop.bedrooms}房推荐？最好在{prop.city}{prop.district}附近。")
-
-    # 7. 新房偏好
-    if prop.build_year >= 2015:
-        queries.append(f"在{prop.city}{prop.district}找个2015年以后的新房，有没有性价比高的？")
-
-    # 8. 简洁关键词式
-    if prop.type:
-        queries.append(f"{prop.city}{prop.district} {prop.price}万内住宅")
-
-    return queries
-
-def get_negative_samples(conn, prop_id, num_random=2, num_hard=2):
-    cursor = conn.cursor()
-
-    # 获取目标房源
-    cursor.execute("SELECT * FROM properties WHERE id = ?", (prop_id,))
-    row = cursor.fetchone()
-    if not row:
-        return []
-
-    columns = [desc[0] for desc in cursor.description]
-    prop_dict = dict(zip(columns, row))
-
-    def row_to_property(row):
-        d = dict(zip(columns, row))
-        return Property(**d)
-
-    # --- 1. 静态负样本：随机挑选与当前房源无关的 ---
-    cursor.execute(
-        "SELECT * FROM properties WHERE id != ? ORDER BY RANDOM() LIMIT ?",
-        (prop_id, num_random)
+def setup_logger(log_path):
+    logging.basicConfig(
+        filename=log_path,
+        filemode='a',
+        format='%(asctime)s %(levelname)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        level=logging.INFO
     )
-    random_negatives = [row_to_property(r) for r in cursor.fetchall()]
-
-    # --- 2. 硬负样本：部分相似但关键字段差异 ---
-    cursor.execute("""
-        SELECT * FROM properties
-        WHERE id != ?
-          AND city = ?
-          AND ABS(price - ?) < 20
-          AND ABS(area - ?) < 15
-          AND ABS(distance_to_metro - ?) > 1000
-        ORDER BY RANDOM()
-        LIMIT ?
-    """, (
-        prop_dict['id'], prop_dict['city'],
-        prop_dict['price'], prop_dict['area'],
-        prop_dict['distance_to_metro'], num_hard
-    ))
-    hard_negatives = [row_to_property(r) for r in cursor.fetchall()]
-
-    return random_negatives + hard_negatives
 
 
-if __name__ == "__main__":
-    # 打开数据库连接
-    conn = sqlite3.connect("property.db")
+def train_model(csv_path = './train_data.csv', output_path='./train_model', batch_size=16, num_epochs=5,
+                model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", dev_path= './dev_train_data.csv'):
+    # 日志初始化
+    os.makedirs(output_path, exist_ok=True)
+    log_file = os.path.join(output_path, 'train.log')
+    setup_logger(log_file)
 
-    # 获取某个房源的负样本
-    negatives = get_negative_samples(conn, prop_id=42)
+    model = build_model(pretrained_model=model_name)
 
-    # 转为描述句子
-    for neg_prop in negatives:
-        text = property_to_random_text(neg_prop)
-        print(text)
+    logging.info("Loading training data...")
+    train_samples = load_triplet_data(csv_path)
+    train_dataset = SentencesDataset(train_samples, model)
+    train_dataloader = DataLoader(train_dataset, shuffle=True, batch_size=batch_size)
+
+    logging.info("Building model...")
+
+    train_loss = losses.TripletLoss(model=model)
+
+    evaluator = None
+    if dev_path and os.path.exists(dev_path):
+        logging.info("Loading dev set...")
+        dev_samples = load_dev_pairs(dev_path)
+        dev_queries = [e.texts[0] for e in dev_samples]
+        dev_positives = [e.texts[1] for e in dev_samples]
+        dev_scores = [1.0 for _ in dev_samples]
+
+        evaluator = evaluation.EmbeddingSimilarityEvaluator(
+            dev_queries,
+            dev_positives,
+            dev_scores,
+            name="dev-eval"
+        )
+
+    warmup_steps = int(len(train_dataloader) * num_epochs * 0.1)
+
+    logging.info(f"Starting training for {num_epochs} epochs...")
+    model.fit(
+        train_objectives=[(train_dataloader, train_loss)],
+        evaluator=evaluator,
+        epochs=num_epochs,
+        warmup_steps=warmup_steps,
+        evaluation_steps=1000 if evaluator else None,
+        output_path=output_path,
+        show_progress_bar=True
+    )
+
+    logging.info("Training completed.")
+    logging.info(f"Model saved to {output_path}")
+
+
+if __name__ == '__main__':
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--csv_path', type=str, default='train_data.csv', help='Path to training CSV file')
+    parser.add_argument('--dev_path', type=str, default='dev_data.csv', help='Path to dev CSV file (optional)')
+    parser.add_argument('--output_path', type=str, default='./output', help='Output model directory')
+    parser.add_argument('--batch_size', type=int, default=16)
+    parser.add_argument('--epochs', type=int, default=1)
+    parser.add_argument('--model_name', type=str, default='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')
+
+    args = parser.parse_args()
+
+    train_model(
+        csv_path=args.csv_path,
+        dev_path=args.dev_path,
+        output_path=args.output_path,
+        batch_size=args.batch_size,
+        num_epochs=args.epochs,
+        model_name=args.model_name
+    )

@@ -1,12 +1,14 @@
 import csv
 import sys
 import threading
+from random import choice
 
 from sympy.strategies.core import switch
 
 from sbert import SentenceBert
 from property import Property
 from sqlite_db import SqliteDB
+from train import train_model
 from vector_db import VectorDB
 
 # 训练教程？
@@ -17,7 +19,7 @@ from vector_db import VectorDB
 
 # 语义模型趋势榜
 # https://huggingface.co/models?pipeline_tag=sentence-similarity&language=zh&sort=trending
-sdb = SqliteDB()
+sdb = None
 vdb = None
 
 
@@ -46,6 +48,7 @@ def prepare_data(bert: SentenceBert, num=100):
 
 
 def random_property_to_db(num=1000):
+    sdb = SqliteDB("property_dev.db")
     while num > 0:
         prop = Property()
         prop.generate_property()
@@ -68,45 +71,58 @@ def sync_to_milvus():
             vdb.upsert([p_dict])
             last_id = prop.id
 
-def gen_training_data():
+def gen_training_data(dev = False):
+    if dev:
+        sdb = SqliteDB("property_dev.db")
+    else:
+        sdb = SqliteDB()
     page_size = 1000
     last_id = 0
     header = ["query", "positive", "negative"]
-    fp = open("trandata.csv", "w", newline="", encoding="utf-8")
+    if dev:
+        fp = open("dev_tran_data.csv", "w", newline="", encoding="utf-8")
+    else:
+        fp = open("tran_data.csv", "w", newline="", encoding="utf-8")
     writer = csv.writer(fp)
     writer.writerow(header)
+    count = 0
     while True:
         props = sdb.list(last_id, page_size)
         if not props:
             break
         for prop in props:
+            count += 1
+            last_id = prop.id
             queries = prop.property_to_query_texts()
             for query in queries:
                 negative = prop.gen_negative_property(query[0])
-                print(negative)
-                exit(0)
                 writer.writerow([query[1], prop.description, negative])
-                last_id = prop.id
+        if count % 10000 == 0:
+            print(f"{count}/50000")
     fp.close()
 
 
+
 if __name__ == '__main__':
-    step = sys.argv[1]
+    step = ""
+    if len(sys.argv) == 2:
+        step = sys.argv[1]
 
     if step == "prepare":
         random_property_to_db(500000)
+    if step == "prepare_dev":
+        random_property_to_db(50000)
     elif step == "sync":
         vdb = VectorDB()
         sync_to_milvus()
     elif step == "gen_tran_data":
         gen_training_data()
+    elif step == "gen_dev_tran_data":
+        gen_training_data(True)
     elif step == "train":
-        pass
+        train_model("tran_data.csv")
     else:
-        p = Property()
-        p.generate_property()
-        print(p.to_prompt())
-        print("Usage: python main.py prepare | train | test")
+        print("Usage: python main.py xxxx")
     # prop = Property()
     # prop.generate_property()
     # print(prop.combine_description())

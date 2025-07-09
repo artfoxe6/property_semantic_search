@@ -215,18 +215,18 @@ class Property:
                 p.carspaces = 0
             elif m == 'area':
                 if eq == "lt":
-                    p.area = self.area + choice([x for x in range(10, self.area) if x != 0])
+                    p.area = self.area + choice([x for x in range(10, int(self.area)) if x != 0])
                 elif eq == "gt":
-                    p.area = self.area - choice([x for x in range(10, self.area-10) if x != 0])
+                    p.area = self.area - choice([x for x in range(10, int(self.area)-10) if x != 0])
                 else:
-                    p.area = self.area + choice([x for x in range(-self.area + 10, self.area + 1) if x != 0])
+                    p.area = self.area + choice([x for x in range(int(-self.area) + 10, int(self.area) + 1) if x != 0])
             elif m == 'price':
                 if eq == "lt":
-                    p.price = self.price + choice([x for x in range(10, self.price) if x != 0])
+                    p.price = self.price + choice([x for x in range(10, int(self.price)) if x != 0])
                 elif eq == "gt":
-                    p.price = self.price - choice([x for x in range(-self.price + 10, -10) if x != 0])
+                    p.price = self.price - choice([x for x in range(int(-self.price) + 10, -10) if x != 0])
                 else:
-                    p.price = self.price + choice([x for x in range(-self.price + 10, self.price+1) if x != 0])
+                    p.price = self.price + choice([x for x in range(int(-self.price) + 10, int(self.price)+1) if x != 0])
             elif m == 'type':
                 p.type = choice([x for x in ["住宅", "公寓", "别墅"] if x != self.type])
             elif m == 'dis_m':

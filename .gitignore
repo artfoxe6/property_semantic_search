@@ -200,4 +200,6 @@ backup/
 .DS_Store
 volumes/
 property.db
-trandata.csv
+tran_data.csv
+property_dev.db
+dev_tran_data.csv
