@@ -78,7 +78,10 @@ def gen_training_data(dev = False):
         sdb = SqliteDB()
     page_size = 1000
     last_id = 0
-    header = ["query", "positive", "negative"]
+    if dev:
+        header = ["query", "positive"]
+    else:
+        header = ["query", "positive", "negative"]
     if dev:
         fp = open("dev_tran_data.csv", "w", newline="", encoding="utf-8")
     else:
@@ -95,8 +98,12 @@ def gen_training_data(dev = False):
             last_id = prop.id
             queries = prop.property_to_query_texts()
             for query in queries:
-                negative = prop.gen_negative_property(query[0])
-                writer.writerow([query[1], prop.description, negative])
+                if dev:
+                    writer.writerow([query[1], prop.description])
+                else:
+                    negative = prop.gen_negative_property(query[0])
+                    writer.writerow([query[1], prop.description, negative])
+
         if count % 10000 == 0:
             print(f"{count}/50000")
     fp.close()
