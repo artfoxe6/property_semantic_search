@@ -18,7 +18,7 @@ from vector_db import VectorDB
 # 语义模型趋势榜
 # https://huggingface.co/models?pipeline_tag=sentence-similarity&language=zh&sort=trending
 sdb = SqliteDB()
-vdb = VectorDB()
+vdb = None
 
 
 # vdb.create_collection()
@@ -83,6 +83,8 @@ def gen_training_data():
             queries = prop.property_to_query_texts()
             for query in queries:
                 negative = prop.gen_negative_property(query[0])
+                print(negative)
+                exit(0)
                 writer.writerow([query[1], prop.description, negative])
                 last_id = prop.id
     fp.close()
@@ -94,6 +96,7 @@ if __name__ == '__main__':
     if step == "prepare":
         random_property_to_db(500000)
     elif step == "sync":
+        vdb = VectorDB()
         sync_to_milvus()
     elif step == "gen_tran_data":
         gen_training_data()
