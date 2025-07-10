@@ -47,7 +47,7 @@ def prepare_data(bert: SentenceBert, num=100):
         thread.join()
 
 
-def random_property_to_db(num=1000):
+def gen_property_data(num=10000):
     sdb = SqliteDB("property.db")
     while num > 0:
         prop = Property()
@@ -102,18 +102,16 @@ def gen_training_data(dev = False):
                     negative = prop.gen_negative_property(query[0])
                     writer.writerow([query[1], prop.description, negative])
                     count += 1
+                    if count % 10000 == 0:
+                        print(f"{count}/500000")
                 else:
                     writer.writerow([query[1], prop.description])
                     count_dev += 1
+                    if count_dev % 10000 == 0:
+                        print(f"dev {count_dev}/50000")
 
-        if count % 10000 == 0:
-            print(f"{count}/500000")
-        if count_dev % 10000 == 0:
-            print(f"dev {count}/50000")
-
-        if count >= 500000 and count_dev >= 50000:
+        if count_dev >= 50000:
             break
-
     fp.close()
     fp_dev.close()
 
@@ -125,10 +123,10 @@ if __name__ == '__main__':
         step = sys.argv[1]
 
     if step == "gen_property_data":
-        random_property_to_db(500000)
+        gen_property_data(500000)
     elif step == "sync_to_milvus":
         sync_to_milvus()
-    elif step == "gen_tran_data":
+    elif step == "gen_training_data":
         gen_training_data()
     elif step == "train":
         train_model("tran_data.csv")
