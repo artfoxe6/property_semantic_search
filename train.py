@@ -39,8 +39,8 @@ def setup_logger(log_path):
     )
 
 
-def train_model(csv_path = './train_data.csv', output_path='./train_model', batch_size=16, num_epochs=5,
-                model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", dev_path= './dev_train_data.csv'):
+def train_model(csv_path = './train_data.csv', output_path='./train_model', batch_size=32, num_epochs=3,
+                model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", dev_path= './train_data_dev.csv'):
     # 日志初始化
     os.makedirs(output_path, exist_ok=True)
     log_file = os.path.join(output_path, 'train.log')

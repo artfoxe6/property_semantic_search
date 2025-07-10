@@ -237,7 +237,7 @@ class Property:
                 p.build_year = randint(1980, 2010)
             elif m == 'district':
                 p.district = l.randomDistrict(self.district)
-        p.description = self.combine_description()
+        p.description = p.combine_description()
         return p.description
 
 

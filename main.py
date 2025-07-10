@@ -73,18 +73,18 @@ def sync_to_milvus():
             vdb.upsert([p_dict])
             last_id = prop.id
 
-def gen_training_data(dev = False):
+def gen_training_data(tran_count=10000, dev_count=1000):
     sdb = SqliteDB()
     page_size = 1000
     last_id = 0
     header_dev = ["query", "positive"]
     header = ["query", "positive", "negative"]
 
-    fp_dev = open("dev_tran_data.csv", "w", newline="", encoding="utf-8")
+    fp_dev = open("train_data_dev.csv", "w", newline="", encoding="utf-8")
     writer_dev = csv.writer(fp_dev)
     writer_dev.writerow(header_dev)
 
-    fp = open("tran_data.csv", "w", newline="", encoding="utf-8")
+    fp = open("train_data.csv", "w", newline="", encoding="utf-8")
     writer = csv.writer(fp)
     writer.writerow(header)
 
@@ -98,19 +98,21 @@ def gen_training_data(dev = False):
             last_id = prop.id
             queries = prop.property_to_query_texts()
             for query in queries:
-                if count < 500000:
+                if count < tran_count:
                     negative = prop.gen_negative_property(query[0])
                     writer.writerow([query[1], prop.description, negative])
                     count += 1
-                    if count % 10000 == 0:
-                        print(f"{count}/500000")
-                else:
-                    writer.writerow([query[1], prop.description])
+                    if count % (tran_count/10) == 0:
+                        print(f"{count}/{tran_count}")
+                elif count_dev < dev_count:
+                    writer_dev.writerow([query[1], prop.description])
                     count_dev += 1
-                    if count_dev % 10000 == 0:
-                        print(f"dev {count_dev}/50000")
+                    if count_dev % (dev_count/10) == 0:
+                        print(f"dev {count_dev}/{dev_count}")
+                else:
+                    break
 
-        if count_dev >= 50000:
+        if count_dev >= dev_count:
             break
     fp.close()
     fp_dev.close()
@@ -127,9 +129,9 @@ if __name__ == '__main__':
     elif step == "sync_to_milvus":
         sync_to_milvus()
     elif step == "gen_training_data":
-        gen_training_data()
+        gen_training_data(10000,1000)
     elif step == "train":
-        train_model("tran_data.csv")
+        train_model()
     else:
         print("Usage: python main.py xxxx")
     # prop = Property()
