@@ -203,4 +203,5 @@ property.db
 train_data.csv
 property_dev.db
 train_data_dev.csv
-train_model
+train_model*
+gte-multilingual-base/

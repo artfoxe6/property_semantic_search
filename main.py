@@ -1,9 +1,5 @@
 import csv
 import sys
-import threading
-from random import choice
-
-from sympy.strategies.core import switch
 
 from sbert import SentenceBert
 from property import Property
@@ -22,59 +18,71 @@ from vector_db import VectorDB
 sdb = None
 vdb = None
 
-
-# vdb.create_collection()
-
-
-def worker(bert: SentenceBert):
+def worker(b: SentenceBert, v: VectorDB):
     p = Property()
     p.generate_property()
     p_dict = p.to_dict()
-    p_dict["desc_vector1"] = bert.text2vector(1, p.description)
-    p_dict["desc_vector2"] = bert.text2vector(2, p.description)
+    p_dict["desc_vector"] = b.text2vector(p.description)
 
-    vdb.upsert([p_dict])
-
-
-def prepare_data(bert: SentenceBert, num=100):
-    threads = []
-    for i in range(num):
-        thread = threading.Thread(target=worker, args=([bert]))
-        threads.append(thread)
-        thread.start()
-
-    for thread in threads:
-        thread.join()
+    v.upsert([p_dict])
 
 
-def gen_property_data(num=10000):
-    sdb = SqliteDB("property.db")
+def gen_milvus_data(num=1000):
+    v_db = VectorDB()
+    bert = SentenceBert()
     while num > 0:
-        prop = Property()
-        prop.generate_property()
-        sdb.add_property(prop)
+        p = Property()
+        p.generate_property()
+        p_dict = p.to_dict()
+        p_dict["desc_vector"] = bert.text2vector(p.description)
+        v_db.upsert([p_dict])
         num -= 1
 
-def sync_to_milvus():
-    vdb = VectorDB()
-    sdb = SqliteDB("property.db")
+
+def gen_property_data(train_num=10000, milvus_num=10000):
+    print(f"gen property data {train_num}")
+    s_db = SqliteDB("property.db")
+    while train_num > 0:
+        prop = Property()
+        prop.generate_property()
+        s_db.add_property(prop)
+        train_num -= 1
+
+    print(f"gen property data {milvus_num}")
+    s_db = SqliteDB("property_milvus.db")
+    while milvus_num > 0:
+        prop = Property()
+        prop.generate_property()
+        s_db.add_property(prop)
+        milvus_num -= 1
+
+
+def sync_to_milvus(num=10000):
+    v_db = VectorDB()
+    s_db = SqliteDB("property_milvus.db")
     page_size = 1000
     last_id = 0
+    count = 0
     b = SentenceBert()
     while True:
-        props = sdb.list(last_id, page_size)
+        props = s_db.list(last_id, page_size)
         if not props:
             break
         for prop in props:
             p_dict = prop.to_dict()
-            p_dict["desc_vector1"] = b.text2vector(1, prop.description)
-            p_dict["desc_vector2"] = b.text2vector(2, prop.description)
+            p_dict["desc_vector"] = b.text2vector(prop.description)
 
-            vdb.upsert([p_dict])
+            v_db.upsert([p_dict])
             last_id = prop.id
+            count += 1
+            if count % (num / 10) == 0:
+                print(f"{count}/{num}")
+            if count >= num:
+                break
+
 
 def gen_training_data(tran_count=10000, dev_count=1000):
-    sdb = SqliteDB()
+    s_db = SqliteDB()
     page_size = 1000
     last_id = 0
     header_dev = ["query", "positive"]
@@ -91,7 +99,7 @@ def gen_training_data(tran_count=10000, dev_count=1000):
     count_dev = 0
     count = 0
     while True:
-        props = sdb.list(last_id, page_size)
+        props = s_db.list(last_id, page_size)
         if not props:
             break
         for prop in props:
@@ -102,12 +110,12 @@ def gen_training_data(tran_count=10000, dev_count=1000):
                     negative = prop.gen_negative_property(query[0])
                     writer.writerow([query[1], prop.description, negative])
                     count += 1
-                    if count % (tran_count/10) == 0:
+                    if count % (tran_count / 10) == 0:
                         print(f"{count}/{tran_count}")
                 elif count_dev < dev_count:
                     writer_dev.writerow([query[1], prop.description])
                     count_dev += 1
-                    if count_dev % (dev_count/10) == 0:
+                    if count_dev % (dev_count / 10) == 0:
                         print(f"dev {count_dev}/{dev_count}")
                 else:
                     break
@@ -118,20 +126,21 @@ def gen_training_data(tran_count=10000, dev_count=1000):
     fp_dev.close()
 
 
-
 if __name__ == '__main__':
     step = ""
     if len(sys.argv) == 2:
         step = sys.argv[1]
 
     if step == "gen_property_data":
-        gen_property_data(500000)
+        gen_property_data(50000, 50000)
     elif step == "sync_to_milvus":
         sync_to_milvus()
     elif step == "gen_training_data":
-        gen_training_data(10000,1000)
+        gen_training_data(10000, 1000)
     elif step == "train":
         train_model()
+    elif step == "gen_milvus_data":
+        gen_milvus_data(10000)
     else:
         print("Usage: python main.py xxxx")
     # prop = Property()
