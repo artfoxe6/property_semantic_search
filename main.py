@@ -141,6 +141,10 @@ if __name__ == '__main__':
         train_model(model_name='./gte-multilingual-base')
     elif step == "gen_milvus_data":
         gen_milvus_data(10000)
+    elif step == "all":
+        gen_property_data(50000, 50000)
+        gen_training_data(10000, 1000)
+        train_model(model_name='./gte-multilingual-base')
     else:
         print("Usage: python main.py xxxx")
     # prop = Property()
