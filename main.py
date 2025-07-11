@@ -9,6 +9,7 @@ from vector_db import VectorDB
 
 # 训练教程？
 # https://huggingface.co/blog/train-sentence-transformers#trainer
+# https://sbert.net/docs/sentence_transformer/training_overview.html
 
 # 语义搜索模型排行榜
 # https://huggingface.co/spaces/mteb/leaderboard
@@ -82,6 +83,7 @@ def sync_to_milvus(num=10000):
 
 
 def gen_training_data(tran_count=10000, dev_count=1000):
+    print("gen training data")
     s_db = SqliteDB()
     page_size = 1000
     last_id = 0
@@ -133,12 +135,10 @@ if __name__ == '__main__':
 
     if step == "gen_property_data":
         gen_property_data(50000, 50000)
-    elif step == "sync_to_milvus":
-        sync_to_milvus()
     elif step == "gen_training_data":
         gen_training_data(10000, 1000)
     elif step == "train":
-        train_model()
+        train_model(model_name='./gte-multilingual-base')
     elif step == "gen_milvus_data":
         gen_milvus_data(10000)
     else:

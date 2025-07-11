@@ -205,3 +205,4 @@ property_dev.db
 train_data_dev.csv
 train_model*
 gte-multilingual-base/
+property_milvus.db

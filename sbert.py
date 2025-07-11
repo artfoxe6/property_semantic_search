@@ -10,8 +10,8 @@ from sentence_transformers import SentenceTransformer, util
 
 class SentenceBert:
     def __init__(self):
-        # self.model1 = SentenceTransformer('Alibaba-NLP/gte-multilingual-base', trust_remote_code=True)
-        self.model = SentenceTransformer('./train_model_1')
+        self.model = SentenceTransformer('./gte-multilingual-base',trust_remote_code=True)
+        # self.model = SentenceTransformer('all-MiniLM-L6-v2')
 
     def text2vector(self, text):
         return self.model.encode(text, normalize_embeddings=True)

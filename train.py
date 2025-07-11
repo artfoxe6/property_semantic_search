@@ -24,8 +24,11 @@ def load_dev_pairs(dev_path):
 
 def build_model(pretrained_model='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'):
     word_embedding_model = models.Transformer(pretrained_model)
+
     pooling_model = models.Pooling(word_embedding_model.get_word_embedding_dimension())
-    model = SentenceTransformer(modules=[word_embedding_model, pooling_model])
+
+    model = SentenceTransformer(modules=[word_embedding_model, pooling_model], trust_remote_code=True)
+
     return model
 
 
@@ -39,8 +42,10 @@ def setup_logger(log_path):
     )
 
 
-def train_model(csv_path = './train_data.csv', output_path='./train_model', batch_size=32, num_epochs=3,
-                model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2", dev_path= './train_data_dev.csv'):
+def train_model(csv_path='./train_data.csv', output_path='./train_model', batch_size=8, num_epochs=3,
+                model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+                dev_path='./train_data_dev.csv'):
+    print(f"Training model with {model_name}...")
     # 日志初始化
     os.makedirs(output_path, exist_ok=True)
     log_file = os.path.join(output_path, 'train.log')
