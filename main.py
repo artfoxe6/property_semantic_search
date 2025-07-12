@@ -21,7 +21,7 @@ vdb = None
 
 def worker(b: SentenceBert, v: VectorDB):
     p = Property()
-    p.generate_property()
+    p.random_value()
     p_dict = p.to_dict()
     p_dict["desc_vector"] = b.text2vector(p.description)
 
@@ -29,15 +29,17 @@ def worker(b: SentenceBert, v: VectorDB):
 
 
 def gen_milvus_data(num=1000):
-    v_db = VectorDB()
+    v_db = VectorDB(True)
     bert = SentenceBert()
+    id = 0
     while num > 0:
-        p = Property()
-        p.generate_property()
+        p = Property(id)
+        p.random_value()
         p_dict = p.to_dict()
         p_dict["desc_vector"] = bert.text2vector(p.description)
         v_db.upsert([p_dict])
         num -= 1
+        id += 1
 
 
 def gen_property_data(train_num=10000, milvus_num=10000):
@@ -45,7 +47,7 @@ def gen_property_data(train_num=10000, milvus_num=10000):
     s_db = SqliteDB("property.db")
     while train_num > 0:
         prop = Property()
-        prop.generate_property()
+        prop.random_value()
         s_db.add_property(prop)
         train_num -= 1
 
@@ -53,7 +55,7 @@ def gen_property_data(train_num=10000, milvus_num=10000):
     s_db = SqliteDB("property_milvus.db")
     while milvus_num > 0:
         prop = Property()
-        prop.generate_property()
+        prop.random_value()
         s_db.add_property(prop)
         milvus_num -= 1
 
@@ -136,27 +138,14 @@ if __name__ == '__main__':
     if step == "gen_property_data":
         gen_property_data(50000, 50000)
     elif step == "gen_training_data":
-        gen_training_data(10000, 1000)
+        gen_training_data(50000, 5000)
     elif step == "train":
         train_model(model_name='./gte-multilingual-base')
     elif step == "gen_milvus_data":
         gen_milvus_data(10000)
     elif step == "all":
         gen_property_data(50000, 50000)
-        gen_training_data(10000, 1000)
+        gen_training_data(50000, 5000)
         train_model(model_name='./gte-multilingual-base')
     else:
         print("Usage: python main.py xxxx")
-    # prop = Property()
-    # prop.generate_property()
-    # print(prop.combine_description())
-    # exit(0)
-    # print(prop.to_prompt())
-    # print(SentenceBert.text2vector(model2, prop.to_prompt()))
-    # description = ollama.generate_description(prop.to_prompt())
-    # print(description)
-    # exit(0)
-    # b = SentenceBert()
-    # while True:
-    #     prepare_data(b, 100)
-    #     print("prepare data 100")

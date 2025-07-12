@@ -39,7 +39,7 @@ class Property:
         # 描述信息
         self.description = description
 
-    def generate_property(self):
+    def random_value(self):
         self.bedrooms = randint(1, 6)
 
         # 浴室数一般少于或等于卧室数，最多为卧室数
@@ -49,18 +49,23 @@ class Property:
             self.bathrooms = randint(1, min(self.bedrooms, 3))  # 3间以上浴室较为稀有
 
         # 车位数与卧室略有关联
-        self.carspaces = randint(0, 1 if self.bedrooms <= 2 else 2)
+        self.carspaces = randint(0, 1 if self.bedrooms <= 3 else 2)
+
+        self.type = choice(
+            ["住宅", "住宅", "住宅", "住宅", "住宅", "住宅", "住宅", "住宅", "住宅", "公寓", "公寓", "公寓", "别墅"])
 
         # 房屋面积与房间数有关，每间房间大约 20~50 平米加上公共空间
-        self.area = randint(self.bedrooms * 30, self.bedrooms * 60)
+        if type == "别墅":
+            self.area = randint(200, 1000)
+        else:
+            self.area = randint(self.bedrooms * 30, self.bedrooms * 60)
 
         # 价格与面积略有关联，均价大约 0.8~2 万每平米
         avg_price_per_m2 = randint(8000, 20000)
         self.price = int((self.area * avg_price_per_m2) / 10000)  # 单位为“万”
 
         self.build_year = randint(2000, datetime.now().year)
-        self.decoration = choice(["清水", "简单装修", "豪华装修"])
-        self.type = choice(["住宅", "公寓", "别墅"])
+        self.decoration = choice(["简装修", "精装修", "豪华装修"])
 
         # 距地铁和学校距离：较远也不会超过 5000 米
         self.distance_to_metro = randint(50, 3000)
@@ -117,19 +122,31 @@ class Property:
                 """
 
     def combine_description(self) -> str:
-        return f"""房产类型：{self.type},房屋面积：{self.area}平方米,卧室数：{self.bedrooms}间,浴室数：{self.bathrooms}间,车位数：{self.carspaces}个,楼层：{self.floor}层,建造年份：{self.build_year}年,上市时间：{self.list_at},装修情况：{self.decoration},所在省市：{self.province} {self.city} {self.district},房屋总价：{self.price}万人民币,离地铁距离：{self.distance_to_metro}米,离学校距离：{self.distance_to_school}米"""
+        # return f"""房产类型：{self.type},房屋面积：{self.area}平方米,卧室数：{self.bedrooms}间,浴室数：{self.bathrooms}间,车位数：{self.carspaces}个,楼层：{self.floor}层,建造年份：{self.build_year}年,上市时间：{self.list_at},装修情况：{self.decoration},所在省市：{self.province} {self.city} {self.district},房屋总价：{self.price}万人民币,离地铁距离：{self.distance_to_metro}米,离学校距离：{self.distance_to_school}米"""
+        description = f"""位于{self.district} {self.bedrooms}室{self.bathrooms}卫 {self.type} {self.area}平 总价{self.price}万 {self.build_year}年建造 {self.decoration} 距离地铁{self.distance_to_metro}米 距离学校{self.distance_to_school}米"""
+        if self.carspaces > 0:
+            description += f" 带{self.carspaces}车位"
+        return description
 
     @classmethod
-    def up_round_to_5(cls, num):
-        if num % 5 == 0:
+    def up_round_to_10(cls, num):
+        if num % 10 == 0:
             return num
         else:
-            return ((num // 5) + 1) * 5
+            return ((num // 10) + 1) * 10
+
+    def price_to_query_texts(self):
+        price = self.up_round_to_10(self.price)
+        return choice([("=", f"{price}左右"), ("<", f"{price}万以内"), ("range", f"{price}万以下")])
+
+    def area_to_query_texts(self):
+        area = self.up_round_to_10(self.area)
+        return choice([("<>", f"{area}左右"), ("<", f"{area}万以内")])
 
     def property_to_query_texts(self):
         # 基础搜索意图
         queries = [
-            (1, f"{self.district}有哪些{self.bedrooms}室{self.bathrooms}卫的房子？价格大概在{self.price}万以内。"),
+            (1, f"{self.district}有哪些{self.bedrooms}室{self.bathrooms}卫的{self.type}？价格大概在{self.price}万以内。"),
             (2, f"找个{self.area}平左右的{self.bedrooms}房，在{self.district}。"),
             (3, f"{self.district}有没有{self.bedrooms}房，{self.area}平米，预算{self.price}万左右的房子？")
         ]
@@ -141,7 +158,7 @@ class Property:
 
         # 价格需求
         if self.price < 70:
-            queries.append((5, f"预算不高，找套{self.district}的{self.up_round_to_5(self.price)}内的房子。"))
+            queries.append((5, f"预算不高，找套{self.district}的{self.up_round_to_10(self.price)}内的房子。"))
 
         # 大户型需求
         if self.area >= 120:
@@ -172,34 +189,34 @@ class Property:
 
     def gen_negative_property(self, group):
         if group == 1:
-            return self.negative_property_v2(["district","bed","bath","price"])
+            return self.negative_property_v2(["district", "bed", "bath", "price"])
         elif group == 2:
-            return self.negative_property_v2(["district","bed","area"])
+            return self.negative_property_v2(["district", "bed", "area"])
         elif group == 3:
-            return self.negative_property_v2(["district","bed","area","price"])
+            return self.negative_property_v2(["district", "bed", "area", "price"])
         elif group == 4:
-            return self.negative_property_v2(["district","area"], "lt")
+            return self.negative_property_v2(["district", "area"], "lt")
         elif group == 5:
-            return self.negative_property_v2(["district","price"], "lt")
+            return self.negative_property_v2(["district", "price"], "lt")
         elif group == 6:
-            return self.negative_property_v2(["bed","area"],"gt")
+            return self.negative_property_v2(["bed", "area"], "gt")
         elif group == 7:
-            return self.negative_property_v2(["district","bed","area"],"gt")
+            return self.negative_property_v2(["district", "bed", "area"], "gt")
         elif group == 8:
-            return self.negative_property_v2(["district","dis_m"])
+            return self.negative_property_v2(["district", "dis_m"])
         elif group == 9:
-            return self.negative_property_v2(["district","bed", "dis_m", "area"])
+            return self.negative_property_v2(["district", "bed", "dis_m", "area"])
         elif group == 10:
-            return self.negative_property_v2(["district","dis_s"])
+            return self.negative_property_v2(["district", "dis_s"])
         elif group == 11:
-            return self.negative_property_v2(["district","bed", "car"])
+            return self.negative_property_v2(["district", "bed", "car"])
         elif group == 12:
-            return self.negative_property_v2(["district","build_year"])
+            return self.negative_property_v2(["district", "build_year"])
         else:
             raise ValueError("Invalid group")
 
     # 构造负样本
-    def negative_property_v2(self, mask=None, eq = "lt"):
+    def negative_property_v2(self, mask=None, eq="lt"):
         if mask is None:
             mask = []
         l = Location()
@@ -208,16 +225,16 @@ class Property:
         # mask = random.sample(mask, randint(1, len(mask)))
         for m in mask:
             if m == 'bed':
-                p.bedrooms = choice([x for x in range(1,7) if x != self.bedrooms])
+                p.bedrooms = choice([x for x in range(1, 7) if x != self.bedrooms])
             elif m == 'bath':
-                p.bathrooms = choice([x for x in range(1,4) if x != self.bathrooms])
+                p.bathrooms = choice([x for x in range(1, 4) if x != self.bathrooms])
             elif m == 'car':
                 p.carspaces = 0
             elif m == 'area':
                 if eq == "lt":
                     p.area = self.area + choice([x for x in range(10, int(self.area)) if x != 0])
                 elif eq == "gt":
-                    p.area = self.area - choice([x for x in range(10, int(self.area)-10) if x != 0])
+                    p.area = self.area - choice([x for x in range(10, int(self.area) - 10) if x != 0])
                 else:
                     p.area = self.area + choice([x for x in range(int(-self.area) + 10, int(self.area) + 1) if x != 0])
             elif m == 'price':
@@ -226,7 +243,8 @@ class Property:
                 elif eq == "gt":
                     p.price = self.price - choice([x for x in range(int(-self.price) + 10, -10) if x != 0])
                 else:
-                    p.price = self.price + choice([x for x in range(int(-self.price) + 10, int(self.price)+1) if x != 0])
+                    p.price = self.price + choice(
+                        [x for x in range(int(-self.price) + 10, int(self.price) + 1) if x != 0])
             elif m == 'type':
                 p.type = choice([x for x in ["住宅", "公寓", "别墅"] if x != self.type])
             elif m == 'dis_m':
@@ -240,11 +258,9 @@ class Property:
         p.description = p.combine_description()
         return p.description
 
-
-
-
-    def negative_property(self, district = None, bed=None, bath=None, car=None, area=None, price=None, b_y=None, type=None, dis_m=None,
-                          dis_s=None,compare=None):
+    def negative_property(self, district=None, bed=None, bath=None, car=None, area=None, price=None, b_y=None,
+                          type=None, dis_m=None,
+                          dis_s=None, compare=None):
         p = copy.deepcopy(self)
         diff = 0
 
@@ -376,3 +392,9 @@ class Property:
                 if r["min"] <= value <= r["max"]:
                     return choice(r["synonyms"])
         return ""
+
+
+if __name__ == "__main__":
+    p = Property()
+    p.random_value()
+    print(p.description)

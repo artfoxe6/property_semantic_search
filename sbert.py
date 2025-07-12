@@ -10,7 +10,8 @@ from sentence_transformers import SentenceTransformer, util
 
 class SentenceBert:
     def __init__(self):
-        self.model = SentenceTransformer('./gte-multilingual-base',trust_remote_code=True)
+        # self.model = SentenceTransformer('./gte-multilingual-base',trust_remote_code=True)
+        self.model = SentenceTransformer('./train_model',trust_remote_code=True)
         # self.model = SentenceTransformer('all-MiniLM-L6-v2')
 
     def text2vector(self, text):
@@ -30,7 +31,7 @@ if __name__ == "__main__":
         queryStr = sys.argv[1]
         sbert = SentenceBert()
 
-        print(",".join(map(str, sbert.text2vector(queryStr))))
+        print("["+",".join(map(str, sbert.text2vector(queryStr)))+"]")
         sys.exit(1)
     elif len(sys.argv) == 3:
         sbert = SentenceBert()
