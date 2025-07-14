@@ -192,3 +192,17 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+.idea/
+logs/
+milvus-backup
+backup/
+.DS_Store
+volumes/
+property.db
+train_data.csv
+property_dev.db
+train_data_dev.csv
+train_model*
+gte-multilingual-base
+property_milvus.db
