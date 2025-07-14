@@ -137,16 +137,19 @@ class Property:
 
     def price_to_query_texts(self):
         price = up_round_to_10(self.price)
-        return choice([("=", f"{price}万左右"), ("=", f"{price}万"), ("<", f"{price}万以内"), ("<>", f"{price - 10}到{price+10}万")])
+        return choice([("=", f"{price}万左右"), ("=", f"{price}万"), ("<", f"{price}万以内"),
+                       ("<>", f"{price - 10}到{price + 10}万")])
 
     def area_to_query_texts(self):
         area = up_round_to_10(self.area)
-        return choice([("=", f"{area}平方米左右"), ("=", f"{area}平方米"), ("<", f"{area}万以内"), ("<>", f"{area - 10}到{area+10}平方米")])
+        return choice([("=", f"{area}平方米左右"), ("=", f"{area}平方米"), ("<", f"{area}万以内"),
+                       ("<>", f"{area - 10}到{area + 10}平方米")])
 
     def property_to_query_texts(self):
         queries = []
-        direction,price_text = choice(self.price_to_query_texts())
-        queries.append((1, direction,f"{self.district}有哪些{self.bedrooms}室{self.bathrooms}卫的{self.type}？{price_text}。"))
+        direction, price_text = choice(self.price_to_query_texts())
+        queries.append(
+            (1, direction, f"{self.district}有哪些{self.bedrooms}室{self.bathrooms}卫的{self.type}？{price_text}。"))
         queries.append((2, "", f"找个{self.area}平左右的{self.bedrooms}房，在{self.district}。"))
         direction, area_text = choice(self.area_to_query_texts())
         queries.append((3, direction, f"{self.district}有没有{self.bedrooms}房，{area_text}，{price_text}"))
@@ -157,11 +160,13 @@ class Property:
 
         # 学区房需求
         if self.distance_to_school and self.distance_to_school <= 1500:
-            queries.append((10, f"想买套{self.get_synonyms('distance_to_school', self.distance_to_school)}的房子，最好在{self.district}，适合孩子上学。"))
+            queries.append((10,
+                            f"想买套{self.get_synonyms('distance_to_school', self.distance_to_school)}的房子，最好在{self.district}，适合孩子上学。"))
 
         # 车位需求
         if self.carspaces > 0:
-            queries.append((11, f"有没有{self.get_synonyms('carspaces', self.carspaces)}的{self.get_synonyms('bedrooms', self.bedrooms)}推荐？最好在{self.district}附近。"))
+            queries.append((11,
+                            f"有没有{self.get_synonyms('carspaces', self.carspaces)}的{self.get_synonyms('bedrooms', self.bedrooms)}推荐？最好在{self.district}附近。"))
 
         # 新房偏好
         if self.build_year > 2015:
