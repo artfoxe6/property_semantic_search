@@ -16,6 +16,8 @@ from vector_db import VectorDB
 
 # 语义模型趋势榜
 # https://huggingface.co/models?pipeline_tag=sentence-similarity&language=zh&sort=trending
+
+# https://huggingface.co/Alibaba-NLP/gte-multilingual-base
 sdb = None
 vdb = None
 
