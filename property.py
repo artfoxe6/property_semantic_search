@@ -130,9 +130,13 @@ class Property:
 
     def combine_description(self) -> str:
         # return f"""房产类型：{self.type},房屋面积：{self.area}平方米,卧室数：{self.bedrooms}间,浴室数：{self.bathrooms}间,车位数：{self.carspaces}个,楼层：{self.floor}层,建造年份：{self.build_year}年,上市时间：{self.list_at},装修情况：{self.decoration},所在省市：{self.province} {self.city} {self.district},房屋总价：{self.price}万人民币,离地铁距离：{self.distance_to_metro}米,离学校距离：{self.distance_to_school}米"""
-        description = f"""位于{self.district} {self.bedrooms}室{self.bathrooms}卫 {self.type} {self.area}平 总价{self.price}万 {self.build_year}年建造 {self.decoration} 距离地铁{self.distance_to_metro}米 距离学校{self.distance_to_school}米"""
+        description = f"""位于{self.district} {self.bedrooms}室{self.bathrooms}卫 {self.type} {self.area}平 总价{self.price}万 {self.build_year}年建造 {self.decoration}"""
         if self.carspaces > 0:
             description += f" 带{self.carspaces}车位"
+        if self.distance_to_metro < 1000:
+            description += f" 靠近地铁"
+        if self.distance_to_school < 1000:
+            description += f" 靠近学校"
         return description
 
     def price_to_query_texts(self):
@@ -380,6 +384,20 @@ class Property:
                 if r["min"] <= value <= r["max"]:
                     return choice(r["synonyms"])
         return ""
+
+    # 根据 property的这些属性 [地区，bedrooms,bathrooms, 面积，总价，修建年代，装修等级，靠近学校，靠近学校，带车位] 生成 query
+    # 随机抽取一个属性，生成一个query
+    # 随机抽取两个属性，生成两个query
+    # 随机抽取三个属性，生成三个query
+    # 随机抽取四个属性，生成三个query
+    # 随机抽取五个属性，生成两个query
+    # 随机抽取六个属性，生成一个query
+    # 每个属性设置一个抽取的权重， 地区 = 0.5, bedrooms = 0.5, bathrooms = 0.3, area = 0.3, price = 0.3, build_year = 0.1, distance_to_metro = 0.3, distance_to_school = 0.3, type = 0.3, carspaces = 0.2
+    def create_property_queries(self):
+        queries = []
+        for i in range(1,6):
+            query = ""
+
 
 
 if __name__ == "__main__":
