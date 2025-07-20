@@ -1,5 +1,8 @@
 import csv
+import os
 import sys
+import time
+from pathlib import Path
 
 from sbert import SentenceBert
 from property import Property
@@ -110,7 +113,7 @@ def gen_training_data(tran_count=10000, dev_count=1000):
             break
         for prop in props:
             last_id = prop.id
-            queries = prop.property_to_query_texts()
+            queries = prop.property_to_query_texts_v2()
             for query in queries:
                 if count < tran_count:
                     negative = prop.gen_negative_property(query[0])
@@ -146,8 +149,18 @@ if __name__ == '__main__':
     elif step == "gen_milvus_data":
         gen_milvus_data(10000)
     elif step == "all":
-        gen_property_data(50000, 50000)
-        gen_training_data(50000, 5000)
+        try:
+            os.remove("property.db")
+            os.remove("property_milvus.db")
+            old_folder = Path("train_model")
+            new_folder = Path(f"train_model{time.time()}")
+            old_folder.rename(new_folder)
+        except Exception as e:
+            print(e)
+        finally:
+            pass
+        # gen_property_data(50000, 50000)
+        # gen_training_data(50000, 5000)
         train_model(model_name='./gte-multilingual-base')
     else:
         print("Usage: python main.py xxxx")

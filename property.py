@@ -13,6 +13,23 @@ def up_round_to_10(num):
         return ((num // 10) + 1) * 10
 
 
+def down_round_to_10(num):
+    return (num // 10) * 10
+
+
+def number_to_chinese(num):
+    """
+    将 0~10 的阿拉伯数字转换为中文数字（简体中文）
+    :param num: 整数 (0 <= num <= 10)
+    :return: 中文数字字符串
+    """
+    if not isinstance(num, int) or num < 0 or num > 10:
+        return "输入必须是 0~10 的整数"
+
+    chinese_numbers = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+    return chinese_numbers[num]
+
+
 class Property:
     def __init__(self, id=0, bedrooms=0, bathrooms=0, carspaces=0, floor=0, area=0, price=0, province="", city="",
                  district="", build_year=0, list_at="", decoration="", type="", distance_to_metro=0,
@@ -72,7 +89,7 @@ class Property:
         self.price = int((self.area * avg_price_per_m2) / 10000)  # 单位为“万”
 
         self.build_year = randint(2000, datetime.now().year)
-        self.decoration = choice(["简装修", "精装修", "豪华装修"])
+        self.decoration = choice(["简单装修", "豪华装修"])
 
         # 距地铁和学校距离：较远也不会超过 5000 米
         self.distance_to_metro = randint(50, 3000)
@@ -139,15 +156,166 @@ class Property:
             description += f" 靠近学校"
         return description
 
-    def price_to_query_texts(self):
+    def price_to_query_text(self):
         price = up_round_to_10(self.price)
-        return choice([("=", f"{price}万左右"), ("=", f"{price}万"), ("<", f"{price}万以内"),
-                       ("<>", f"{price - 10}到{price + 10}万")])
+        return choice([
+            f"{price}万左右",
+            f"{price}万",
+            f"{price}万以内",
+            f"{down_round_to_10(self.price - self.price / 10)}到{up_round_to_10(self.price + self.price / 10)}万",
+        ])
 
-    def area_to_query_texts(self):
+    def area_to_query_text(self):
         area = up_round_to_10(self.area)
-        return choice([("=", f"{area}平方米左右"), ("=", f"{area}平方米"), ("<", f"{area}万以内"),
-                       ("<>", f"{area - 10}到{area + 10}平方米")])
+        return choice([
+            f"{area}平左右",
+            f"{area}平",
+            f"{area}平以内",
+            f"{down_round_to_10(self.area - self.area / 10)}到{up_round_to_10(self.area + self.area / 10)}平",
+        ])
+
+    def metro_to_query_text(self):
+        if self.distance_to_metro <= 1000:
+            return choice([
+                f"靠近地铁",
+                f"地铁附近",
+                f"附近有地铁",
+                f"邻近地铁站",
+                f"步行可达地铁站",
+                f"紧邻地铁站",
+                f"交通便利",
+                f"交通方便",
+            ])
+        return ""
+
+    def school_to_query_text(self):
+        if self.distance_to_school <= 1500:
+            return choice([
+                f"靠近学校",
+                f"学校附近",
+                f"附近有学校",
+                f"邻近学校",
+                f"步行可达学校",
+                f"紧邻学校",
+            ])
+        return ""
+
+    def decoration_to_query_text(self):
+        if self.decoration == "豪华装修":
+            return choice([
+                f"豪华装修",
+                f"精装豪宅",
+                f"高档装修",
+                f"品质装修",
+            ])
+        elif self.decoration == "简单装修":
+            return choice([
+                f"简单装修",
+                f"普通装修",
+                f"基础装修",
+                f"常规装修",
+                f"简装",
+                f"基本装修",
+                f"简约风格",
+            ])
+        return ""
+
+    def carspace_to_query_text(self):
+        if self.carspaces > 0:
+            return choice([
+                f"有车位",
+                f"带车位",
+                f"附带车位",
+                f"含车位",
+                f"带{number_to_chinese(self.carspaces)}个车位",
+                f"含固定车位",
+                f"带私家车位",
+                f"带停车位",
+                f"停车方便",
+                f"送车位",
+            ])
+        return ""
+
+    def build_year_to_query_text(self):
+        queries = [
+            f"{self.build_year}年左右",
+            f"{self.build_year}年",
+            f"{down_round_to_10(self.build_year)}到{up_round_to_10(self.build_year)}年",
+        ]
+        if self.build_year > 2015:
+            queries.append(f"{self.build_year}年新建的")
+            queries.append(f"房龄较新"),
+            queries.append(f"近几年新建的"),
+            queries.append(f"建成时间较短"),
+            queries.append(f"建筑年代较近"),
+            queries.append(f"次新房"),
+            queries.append(f"建筑年份较新"),
+            queries.append(f"现代新建住宅"),
+
+        return choice(queries)
+
+    def bedrooms_to_query_text(self):
+        queries = [
+            f"{number_to_chinese(self.bedrooms)}室",
+            f"{number_to_chinese(self.bedrooms)}房",
+            f"{number_to_chinese(self.bedrooms)}居室",
+        ]
+        if self.type == "公寓" and self.bedrooms == 1:
+            queries.append(f"单身公寓")
+        return choice(queries)
+
+    def bathrooms_to_query_text(self):
+        queries = [
+            f"{number_to_chinese(self.bathrooms)}卫",
+            f"{number_to_chinese(self.bathrooms)}间浴室",
+            f"{number_to_chinese(self.bathrooms)}个卫生间",
+        ]
+        if self.bathrooms == 1:
+            queries.append(f"独卫")
+        if self.bathrooms == 2:
+            queries.append(f"双卫")
+        return choice(queries)
+
+    def district_to_query_text(self):
+        return choice([
+            f"{self.district}",
+            f"位于{self.district}",
+            f"{self.city}{self.district}",
+        ])
+
+    def prefix_to_query_text(self):
+        return choice([
+            f"找", f"有哪些", f"找一个", f"有没有", f"想找", f"我要", f"是否有", f"",
+        ])
+
+    def property_to_query_texts_v2(self):
+        queries = [(1,
+                    f"{self.district_to_query_text()}有哪些{self.bedrooms}室{self.bathrooms}卫的房子？{self.price_to_query_text()}。"),
+                   (2,
+                    f"{self.prefix_to_query_text()}{self.area_to_query_text()}的{self.bedrooms}房，在{self.district}。"),
+                   (3,
+                    f"{self.district_to_query_text()}有没有{self.bedrooms}房推荐，{self.area_to_query_text()}，{self.price_to_query_text()}")]
+        # 地铁需求
+        if self.distance_to_metro < 1000:
+            queries.append((9,
+                            f"{self.prefix_to_query_text()}{self.district_to_query_text()} {self.bedrooms}房 {self.area_to_query_text()}平 {self.metro_to_query_text()}"))
+
+        # 学区房需求
+        if self.distance_to_school < 1000:
+            queries.append((10,
+                            f"{self.prefix_to_query_text()}{self.school_to_query_text()}的房子，最好在{self.district}，适合孩子上学。"))
+
+        # 车位需求
+        if self.carspaces > 0:
+            queries.append((11,
+                            f"{self.prefix_to_query_text()}{self.carspace_to_query_text()}的{self.bedrooms}房推荐？最好在{self.district}附近。"))
+
+        # 新房偏好
+        if self.build_year > 2015:
+            queries.append((12,
+                            f"在{self.district}找个{self.build_year_to_query_text()}的{self.bedrooms_to_query_text()}房子"))
+
+        return queries
 
     def property_to_query_texts(self):
         queries = []
@@ -199,11 +367,11 @@ class Property:
         elif group == 9:
             return self.negative_property_v2(["district", "bed", "dis_m", "area"])
         elif group == 10:
-            return self.negative_property_v2(["district", "dis_s"])
+            return self.negative_property_v2(["district", "bed", "dis_s"])
         elif group == 11:
             return self.negative_property_v2(["district", "bed", "car"])
         elif group == 12:
-            return self.negative_property_v2(["district", "build_year"])
+            return self.negative_property_v2(["district", "build_year", "bed"])
         else:
             raise ValueError("Invalid group")
 
@@ -395,12 +563,12 @@ class Property:
     # 每个属性设置一个抽取的权重， 地区 = 0.5, bedrooms = 0.5, bathrooms = 0.3, area = 0.3, price = 0.3, build_year = 0.1, distance_to_metro = 0.3, distance_to_school = 0.3, type = 0.3, carspaces = 0.2
     def create_property_queries(self):
         queries = []
-        for i in range(1,6):
+        for i in range(1, 6):
             query = ""
-
 
 
 if __name__ == "__main__":
     p = Property()
     p.random_value()
+    print(f"{down_round_to_10(p.price - p.price / 10)}到{up_round_to_10(p.price + p.price / 10)}万")
     print(p.description)
