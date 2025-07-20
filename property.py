@@ -70,7 +70,7 @@ class Property:
         if self.bedrooms == 1:
             self.bathrooms = 1
         else:
-            self.bathrooms = randint(1, min(self.bedrooms, 3))  # 3间以上浴室较为稀有
+            self.bathrooms = randint(1, 2)
 
         # 车位数与卧室略有关联
         self.carspaces = randint(0, 1 if self.bedrooms <= 3 else 2)
