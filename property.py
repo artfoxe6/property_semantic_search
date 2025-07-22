@@ -417,6 +417,7 @@ class Property:
         l = Location()
         # p = copy.deepcopy(self)
         p = Property()
+        p.random_value()
         # mask中可能指定4个条件用来生成负样本，但是随机取部分条件使用
         # mask = random.sample(mask, randint(1, len(mask)))
         for m in mask:
