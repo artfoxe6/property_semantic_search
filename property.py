@@ -421,9 +421,9 @@ class Property:
         # mask = random.sample(mask, randint(1, len(mask)))
         for m in mask:
             if m == 'bed':
-                p.bedrooms = choice([x for x in range(1, 6) if x != self.bedrooms])
+                p.bedrooms = choice([x for x in range(1, 7) if x != self.bedrooms])
             elif m == 'bath':
-                p.bathrooms = choice([x for x in range(1, 2) if x != self.bathrooms])
+                p.bathrooms = choice([x for x in range(1, 3) if x != self.bathrooms])
             elif m == 'car':
                 p.carspaces = 0
             elif m == 'deco':
