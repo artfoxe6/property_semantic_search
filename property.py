@@ -242,7 +242,7 @@ class Property:
             f"{self.build_year}年",
             f"{down_round_to_10(self.build_year)}到{up_round_to_10(self.build_year)}年",
         ]
-        if self.build_year > 2015:
+        if self.build_year > 2018:
             queries.append(f"{self.build_year}年新建的")
             queries.append(f"房龄较新"),
             queries.append(f"近几年新建的"),
@@ -285,35 +285,52 @@ class Property:
 
     def prefix_to_query_text(self):
         return choice([
-            f"找", f"有哪些", f"找一个", f"有没有", f"想找", f"我要", f"是否有", f"",
+            f"找", f"有哪些", f"找一个", f"有没有", f"想找", f"我要", f"是否有", f"", f"", f"", f"",
         ])
 
     def property_to_query_texts_v2(self):
-        queries = [(1,
-                    f"{self.district_to_query_text()}有哪些{self.bedrooms}室{self.bathrooms}卫的房子？{self.price_to_query_text()}。"),
-                   (2,
-                    f"{self.prefix_to_query_text()}{self.area_to_query_text()}的{self.bedrooms}房，在{self.district}。"),
-                   (3,
-                    f"{self.district_to_query_text()}有没有{self.bedrooms}房推荐，{self.area_to_query_text()}，{self.price_to_query_text()}")]
+        queries = [
+            (1,
+             f"{self.district_to_query_text()}有哪些{self.bedrooms}房{self.bathrooms}卫的房子？价格{self.price_to_query_text()}。"),
+            (3,
+             f"{self.prefix_to_query_text()}{self.district_to_query_text()}的{self.bedrooms}房推荐，总价{self.price_to_query_text()}")
+        ]
+        if self.decoration == "豪华装修":
+            queries.append((2,
+                            f"{self.prefix_to_query_text()}{self.area_to_query_text()}{self.decoration_to_query_text()}的房子，在{self.district_to_query_text()}。"))
+            queries.append((2,
+                            f"{self.prefix_to_query_text()}{self.district_to_query_text()}的{self.bedrooms}房{self.bathrooms}卫{self.decoration_to_query_text()}的房子"))
         # 地铁需求
         if self.distance_to_metro < 1000:
             queries.append((9,
-                            f"{self.prefix_to_query_text()}{self.district_to_query_text()} {self.bedrooms}房 {self.area_to_query_text()}平 {self.metro_to_query_text()}"))
+                            f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.bedrooms}房{self.bathrooms}卫的房子，{self.metro_to_query_text()}"))
+            queries.append((9,
+                            f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.area_to_query_text()}{self.metro_to_query_text()}的房子"))
+            queries.append((0,
+                            f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.metro_to_query_text()}的房子，价格{self.price_to_query_text()}"))
 
         # 学区房需求
         if self.distance_to_school < 1000:
             queries.append((10,
-                            f"{self.prefix_to_query_text()}{self.school_to_query_text()}的房子，最好在{self.district}，适合孩子上学。"))
+                            f"{self.prefix_to_query_text()}{self.school_to_query_text()}的房子，最好在{self.district_to_query_text()}，适合孩子上学。"))
+            queries.append((10,
+                            f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.bedrooms}房{self.bathrooms}卫的房子，{self.school_to_query_text()}"))
+            queries.append((10,
+                            f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.school_to_query_text()}的房子，价格{self.price_to_query_text()}"))
 
         # 车位需求
         if self.carspaces > 0:
             queries.append((11,
-                            f"{self.prefix_to_query_text()}{self.carspace_to_query_text()}的{self.bedrooms}房推荐？最好在{self.district}附近。"))
+                            f"{self.prefix_to_query_text()}{self.carspace_to_query_text()}的{self.bedrooms}房推荐？最好在{self.district_to_query_text()}附近。"))
+            queries.append((11,
+                            f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.carspace_to_query_text()}的房子，价格{self.price_to_query_text()}"))
 
         # 新房偏好
-        if self.build_year > 2015:
+        if self.build_year > 2018:
             queries.append((12,
                             f"在{self.district}找个{self.build_year_to_query_text()}的{self.bedrooms_to_query_text()}房子"))
+            queries.append((1,
+                            f"{self.district_to_query_text()}有哪些{self.bedrooms}房{self.bathrooms}卫的房子？价格{self.build_year_to_query_text()}。"), )
 
         return queries
 

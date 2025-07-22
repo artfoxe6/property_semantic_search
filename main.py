@@ -135,6 +135,7 @@ def gen_training_data(tran_count=10000, dev_count=1000):
     fp_dev.close()
 
 
+# PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0 python main.py all
 if __name__ == '__main__':
     step = ""
     if len(sys.argv) == 2:
@@ -159,8 +160,8 @@ if __name__ == '__main__':
             print(e)
         finally:
             pass
-        gen_property_data(50000, 50000)
-        gen_training_data(50000, 5000)
+        gen_property_data(70000, 70000)
+        gen_training_data(70000, 7000)
         # train_model(model_name='./gte-multilingual-base')
         train_model(model_name='./paraphrase-multilingual-MiniLM-L12-v2')
         gen_milvus_data(10000)
