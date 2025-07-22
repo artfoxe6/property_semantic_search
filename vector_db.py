@@ -36,7 +36,7 @@ class VectorDB:
         schema.add_field(field_name="distance_to_metro", datatype=DataType.FLOAT)
         schema.add_field(field_name="distance_to_school", datatype=DataType.FLOAT)
         schema.add_field(field_name="description", datatype=DataType.VARCHAR, max_length=1024)
-        schema.add_field(field_name="desc_vector", datatype=DataType.FLOAT_VECTOR, dim=768)
+        schema.add_field(field_name="desc_vector", datatype=DataType.FLOAT_VECTOR, dim=384)
 
         index_params = self.client.prepare_index_params()
 
