@@ -327,7 +327,7 @@ class Property:
             queries.append((52,
                             f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.carspace_to_query_text()}的房子，价格{self.price_to_query_text()}"))
             queries.append((53,
-                        f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.carspace_to_query_text()}的房子，面积{self.area_to_query_text()}"))
+                            f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.carspace_to_query_text()}的房子，面积{self.area_to_query_text()}"))
         # 新房偏好
         if self.build_year > 2018:
             queries.append((61,
@@ -383,7 +383,7 @@ class Property:
         elif group == 31:
             return self.negative_property_v2(["district", "bed", "bath", "metro"])
         elif group == 32:
-            return self.negative_property_v2(["metro", "area", "district"])
+            return self.negative_property_v2(["district", "metro", "area"])
         elif group == 33:
             return self.negative_property_v2(["district", "metro", "price"])
 
