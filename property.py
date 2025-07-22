@@ -80,18 +80,18 @@ class Property:
 
         # 房屋面积与房间数有关，每间房间大约 20~50 平米加上公共空间
         if type == "别墅":
-            self.area = randint(200, 1000)
+            self.area = randint(100, 1000)
         else:
-            self.area = randint(self.bedrooms * 30, self.bedrooms * 60)
+            self.area = randint(self.bedrooms * 20, self.bedrooms * 50)
 
-        # 价格与面积略有关联，均价大约 0.8~2 万每平米
-        avg_price_per_m2 = randint(8000, 20000)
+        # 价格与面积略有关联，均价大约 0.5~3 万每平米
+        avg_price_per_m2 = randint(5000, 30000)
         self.price = int((self.area * avg_price_per_m2) / 10000)  # 单位为“万”
 
         self.build_year = randint(2000, datetime.now().year)
         self.decoration = choice(["简单装修", "豪华装修"])
 
-        # 距地铁和学校距离：较远也不会超过 5000 米
+        # 距地铁和学校距离：较远也不会超过 3000 米
         self.distance_to_metro = randint(50, 3000)
         self.distance_to_school = randint(50, 3000)
 
@@ -289,48 +289,53 @@ class Property:
         ])
 
     def property_to_query_texts_v2(self):
+        # 常规搜索
         queries = [
-            (1,
+            (11,
              f"{self.district_to_query_text()}有哪些{self.bedrooms}房{self.bathrooms}卫的房子？价格{self.price_to_query_text()}。"),
-            (3,
+            (12,
              f"{self.prefix_to_query_text()}{self.district_to_query_text()}的{self.bedrooms}房推荐，总价{self.price_to_query_text()}")
         ]
+        # 豪华装修
         if self.decoration == "豪华装修":
-            queries.append((2,
+            queries.append((21,
                             f"{self.prefix_to_query_text()}{self.area_to_query_text()}{self.decoration_to_query_text()}的房子，在{self.district_to_query_text()}。"))
-            queries.append((2,
+            queries.append((22,
                             f"{self.prefix_to_query_text()}{self.district_to_query_text()}的{self.bedrooms}房{self.bathrooms}卫{self.decoration_to_query_text()}的房子"))
         # 地铁需求
         if self.distance_to_metro < 1000:
-            queries.append((9,
+            queries.append((31,
                             f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.bedrooms}房{self.bathrooms}卫的房子，{self.metro_to_query_text()}"))
-            queries.append((9,
-                            f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.area_to_query_text()}{self.metro_to_query_text()}的房子"))
-            queries.append((0,
+            queries.append((32,
+                            f"{self.prefix_to_query_text()}{self.area_to_query_text()}{self.metro_to_query_text()}的房子,在 {self.district_to_query_text()}"))
+            queries.append((33,
                             f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.metro_to_query_text()}的房子，价格{self.price_to_query_text()}"))
 
         # 学区房需求
         if self.distance_to_school < 1000:
-            queries.append((10,
+            queries.append((41,
                             f"{self.prefix_to_query_text()}{self.school_to_query_text()}的房子，最好在{self.district_to_query_text()}，适合孩子上学。"))
-            queries.append((10,
+            queries.append((42,
                             f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.bedrooms}房{self.bathrooms}卫的房子，{self.school_to_query_text()}"))
-            queries.append((10,
-                            f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.school_to_query_text()}的房子，价格{self.price_to_query_text()}"))
+            queries.append((43,
+                            f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.school_to_query_text()}的房子，总价{self.price_to_query_text()}"))
 
         # 车位需求
         if self.carspaces > 0:
-            queries.append((11,
-                            f"{self.prefix_to_query_text()}{self.carspace_to_query_text()}的{self.bedrooms}房推荐？最好在{self.district_to_query_text()}附近。"))
-            queries.append((11,
+            queries.append((51,
+                            f"{self.prefix_to_query_text()}{self.bedrooms}房{self.carspace_to_query_text()}的推荐？最好在{self.district_to_query_text()}附近。"))
+            queries.append((52,
                             f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.carspace_to_query_text()}的房子，价格{self.price_to_query_text()}"))
-
+            queries.append((53,
+                        f"{self.prefix_to_query_text()}{self.district_to_query_text()}{self.carspace_to_query_text()}的房子，面积{self.area_to_query_text()}"))
         # 新房偏好
         if self.build_year > 2018:
-            queries.append((12,
-                            f"在{self.district}找个{self.build_year_to_query_text()}的{self.bedrooms_to_query_text()}房子"))
-            queries.append((1,
-                            f"{self.district_to_query_text()}有哪些{self.bedrooms}房{self.bathrooms}卫的房子？价格{self.build_year_to_query_text()}。"), )
+            queries.append((61,
+                            f"在{self.district_to_query_text()}找个{self.build_year_to_query_text()}{self.area_to_query_text()}的房子"))
+            queries.append((62,
+                            f"{self.district_to_query_text()}有哪些{self.bedrooms}房{self.bathrooms}卫的房子？{self.build_year_to_query_text()}。"), )
+            queries.append((63,
+                            f"{self.prefix_to_query_text()}{self.district_to_query_text()}的{self.build_year_to_query_text()}。价格{self.price_to_query_text()}"), )
 
         return queries
 
@@ -365,30 +370,43 @@ class Property:
         return queries
 
     def gen_negative_property(self, group):
-        if group == 1:
+        if group == 11:
             return self.negative_property_v2(["district", "bed", "bath", "price"])
-        elif group == 2:
-            return self.negative_property_v2(["district", "bed", "area"])
-        elif group == 3:
-            return self.negative_property_v2(["district", "bed", "area", "price"])
-        elif group == 4:
-            return self.negative_property_v2(["district", "area"], "lt")
-        elif group == 5:
-            return self.negative_property_v2(["district", "price"], "lt")
-        elif group == 6:
-            return self.negative_property_v2(["bed", "area"], "gt")
-        elif group == 7:
-            return self.negative_property_v2(["district", "bed", "area"], "gt")
-        elif group == 8:
-            return self.negative_property_v2(["district", "dis_m"])
-        elif group == 9:
-            return self.negative_property_v2(["district", "bed", "dis_m", "area"])
-        elif group == 10:
-            return self.negative_property_v2(["district", "bed", "dis_s"])
-        elif group == 11:
-            return self.negative_property_v2(["district", "bed", "car"])
         elif group == 12:
-            return self.negative_property_v2(["district", "build_year", "bed"])
+            return self.negative_property_v2(["district", "bed", "price"])
+
+        elif group == 21:
+            return self.negative_property_v2(["district", "area", "deco"])
+        elif group == 22:
+            return self.negative_property_v2(["district", "deco", "bed", "bath"])
+
+        elif group == 31:
+            return self.negative_property_v2(["district", "bed", "bath", "metro"])
+        elif group == 32:
+            return self.negative_property_v2(["metro", "area", "district"])
+        elif group == 33:
+            return self.negative_property_v2(["district", "metro", "price"])
+
+        elif group == 41:
+            return self.negative_property_v2(["district", "school"])
+        elif group == 42:
+            return self.negative_property_v2(["district", "bed", "school", "bath"])
+        elif group == 43:
+            return self.negative_property_v2(["district", "price", "school"])
+
+        elif group == 51:
+            return self.negative_property_v2(["district", "bed", "car"])
+        elif group == 52:
+            return self.negative_property_v2(["district", "car", "price"])
+        elif group == 53:
+            return self.negative_property_v2(["district", "car", "area"])
+
+        elif group == 61:
+            return self.negative_property_v2(["district", "build_year", "area"])
+        elif group == 62:
+            return self.negative_property_v2(["district", "build_year", "bed", "bath"])
+        elif group == 63:
+            return self.negative_property_v2(["district", "build_year", "price"])
         else:
             raise ValueError("Invalid group")
 
@@ -397,39 +415,41 @@ class Property:
         if mask is None:
             mask = []
         l = Location()
-        p = copy.deepcopy(self)
+        # p = copy.deepcopy(self)
+        p = Property()
         # mask中可能指定4个条件用来生成负样本，但是随机取部分条件使用
         # mask = random.sample(mask, randint(1, len(mask)))
         for m in mask:
             if m == 'bed':
-                p.bedrooms = choice([x for x in range(1, 7) if x != self.bedrooms])
+                p.bedrooms = choice([x for x in range(1, 6) if x != self.bedrooms])
             elif m == 'bath':
-                p.bathrooms = choice([x for x in range(1, 4) if x != self.bathrooms])
+                p.bathrooms = choice([x for x in range(1, 2) if x != self.bathrooms])
             elif m == 'car':
                 p.carspaces = 0
+            elif m == 'deco':
+                p.decoration = "简单装修"
             elif m == 'area':
-                if eq == "lt":
-                    p.area = self.area + choice([x for x in range(10, int(self.area)) if x != 0])
-                elif eq == "gt":
-                    p.area = self.area - choice([x for x in range(10, int(self.area) - 10) if x != 0])
+                min = down_round_to_10(self.area - self.area / 10)
+                max = up_round_to_10(self.area + self.area / 10)
+                if min < 50:
+                    p.area = choice([max, 1000])
                 else:
-                    p.area = self.area + choice([x for x in range(int(-self.area) + 10, int(self.area) + 1) if x != 0])
+                    p.area = choice([choice([20, min]), choice([max, 1000])])
             elif m == 'price':
-                if eq == "lt":
-                    p.price = self.price + choice([x for x in range(10, int(self.price)) if x != 0])
-                elif eq == "gt":
-                    p.price = self.price - choice([x for x in range(int(-self.price) + 10, -10) if x != 0])
+                min = down_round_to_10(self.price - self.price / 10)
+                max = up_round_to_10(self.price + self.price / 10)
+                if min < 50:
+                    p.price = choice([max, 1000])
                 else:
-                    p.price = self.price + choice(
-                        [x for x in range(int(-self.price) + 10, int(self.price) + 1) if x != 0])
+                    p.price = choice([choice([20, min]), choice([max, 1000])])
             elif m == 'type':
                 p.type = choice([x for x in ["住宅", "公寓", "别墅"] if x != self.type])
-            elif m == 'dis_m':
-                p.distance_to_metro = randint(1500, 3000)
-            elif m == 'dis_s':
-                p.distance_to_school = randint(1500, 3000)
+            elif m == 'metro':
+                p.distance_to_metro = randint(1000, 3000)
+            elif m == 'school':
+                p.distance_to_school = randint(1000, 3000)
             elif m == 'build_year':
-                p.build_year = randint(1980, 2010)
+                p.build_year = randint(2000, 2018)
             elif m == 'district':
                 p.district = l.randomDistrict(self.district)
         p.description = p.combine_description()

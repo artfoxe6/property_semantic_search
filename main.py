@@ -164,6 +164,8 @@ if __name__ == '__main__':
         gen_training_data(70000, 7000)
         # train_model(model_name='./gte-multilingual-base')
         train_model(model_name='./paraphrase-multilingual-MiniLM-L12-v2')
-        gen_milvus_data(10000)
+        # gen_milvus_data(10000)
     else:
+        gen_property_data(7000, 7000)
+        gen_training_data(7000, 700)
         print("Usage: python main.py xxxx")
