@@ -411,9 +411,9 @@ class Property:
             raise ValueError("Invalid group")
 
     # 构造负样本
-    def negative_property_v2(self, mask=None, eq="lt"):
-        if mask is None:
-            mask = []
+    def negative_property_v2(self, mask=None):
+        # 随机抛弃一个条件
+        mask = random.sample(mask, len(mask)- choice([0,1]))  # 生成新数组
         l = Location()
         # p = copy.deepcopy(self)
         p = Property()

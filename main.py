@@ -146,7 +146,7 @@ if __name__ == '__main__':
     elif step == "gen_training_data":
         gen_training_data(50000, 5000)
     elif step == "train":
-        train_model(model_name='./gte-multilingual-base')
+        train_model(model_name='./paraphrase-multilingual-MiniLM-L12-v2')
     elif step == "gen_milvus_data":
         gen_milvus_data(10000)
     elif step == "all":
