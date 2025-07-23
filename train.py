@@ -42,7 +42,7 @@ def setup_logger(log_path):
     )
 
 
-def train_model(csv_path='./train_data.csv', output_path='./train_model', batch_size=8, num_epochs=3,
+def train_model(csv_path='./train_data.csv', output_path='./train_model', batch_size=32, num_epochs=3,
                 model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
                 dev_path='./train_data_dev.csv'):
     print(f"Training model with {model_name}...")

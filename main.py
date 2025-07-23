@@ -160,8 +160,8 @@ if __name__ == '__main__':
             print(e)
         finally:
             pass
-        gen_property_data(70000, 70000)
-        gen_training_data(70000, 7000)
+        gen_property_data(50000, 50000)
+        gen_training_data(50000, 5000)
         # train_model(model_name='./gte-multilingual-base')
         train_model(model_name='./paraphrase-multilingual-MiniLM-L12-v2')
         # gen_milvus_data(10000)
