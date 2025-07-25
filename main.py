@@ -4,6 +4,7 @@ import sys
 import time
 from pathlib import Path
 
+import train
 from sbert import SentenceBert
 from property import Property
 from sqlite_db import SqliteDB
@@ -37,7 +38,8 @@ def gen_milvus_data(num=1000):
     v_db = VectorDB(True)
     bert = SentenceBert()
     id = 0
-    while num > 0:
+    count = 0
+    while True:
         p = Property(id)
         p.random_value()
         p_dict = p.to_dict()
@@ -45,6 +47,10 @@ def gen_milvus_data(num=1000):
         v_db.upsert([p_dict])
         num -= 1
         id += 1
+        if count % (num / 10) == 0:
+            print(f"{count}/{num}")
+        if count >= num:
+            break
 
 
 def gen_property_data(train_num=10000, milvus_num=10000):
@@ -66,8 +72,9 @@ def gen_property_data(train_num=10000, milvus_num=10000):
 
 
 def sync_to_milvus(num=10000):
-    v_db = VectorDB()
-    s_db = SqliteDB("property_milvus.db")
+    v_db = VectorDB(True)
+    # s_db = SqliteDB("property_milvus.db")
+    s_db = SqliteDB("property.db")
     page_size = 1000
     last_id = 0
     count = 0
@@ -85,8 +92,8 @@ def sync_to_milvus(num=10000):
             count += 1
             if count % (num / 10) == 0:
                 print(f"{count}/{num}")
-            if count >= num:
-                break
+        if count >= num:
+            break
 
 
 def gen_training_data(tran_count=10000, dev_count=1000):
@@ -94,12 +101,11 @@ def gen_training_data(tran_count=10000, dev_count=1000):
     s_db = SqliteDB()
     page_size = 1000
     last_id = 0
-    header_dev = ["query", "positive"]
     header = ["query", "positive", "negative"]
 
     fp_dev = open("train_data_dev.csv", "w", newline="", encoding="utf-8")
     writer_dev = csv.writer(fp_dev)
-    writer_dev.writerow(header_dev)
+    writer_dev.writerow(header)
 
     fp = open("train_data.csv", "w", newline="", encoding="utf-8")
     writer = csv.writer(fp)
@@ -122,7 +128,8 @@ def gen_training_data(tran_count=10000, dev_count=1000):
                     if count % (tran_count / 10) == 0:
                         print(f"{count}/{tran_count}")
                 elif count_dev < dev_count:
-                    writer_dev.writerow([query[1], prop.description])
+                    negative = prop.gen_negative_property(query[0])
+                    writer_dev.writerow([query[1], prop.description, negative])
                     count_dev += 1
                     if count_dev % (dev_count / 10) == 0:
                         print(f"dev {count_dev}/{dev_count}")
@@ -137,18 +144,21 @@ def gen_training_data(tran_count=10000, dev_count=1000):
 
 # PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0 python main.py all
 if __name__ == '__main__':
+    train_num = 30000
     step = ""
     if len(sys.argv) == 2:
         step = sys.argv[1]
 
     if step == "gen_property_data":
-        gen_property_data(50000, 50000)
+        gen_property_data(train_num, train_num)
     elif step == "gen_training_data":
-        gen_training_data(50000, 5000)
+        gen_training_data(train_num, int(train_num/10))
     elif step == "train":
         train_model(model_name='./paraphrase-multilingual-MiniLM-L12-v2')
     elif step == "gen_milvus_data":
-        gen_milvus_data(10000)
+        gen_milvus_data(int(train_num/10))
+    elif step == "sync_to_milvus":
+        sync_to_milvus(int(train_num/10))
     elif step == "all":
         try:
             os.remove("property.db")
@@ -160,12 +170,11 @@ if __name__ == '__main__':
             print(e)
         finally:
             pass
-        gen_property_data(50000, 50000)
-        gen_training_data(50000, 5000)
+        gen_property_data(train_num, train_num)
+        gen_training_data(train_num, int(train_num/10))
         # train_model(model_name='./gte-multilingual-base')
         train_model(model_name='./paraphrase-multilingual-MiniLM-L12-v2')
         # gen_milvus_data(10000)
     else:
-        gen_property_data(7000, 7000)
-        gen_training_data(7000, 700)
+        train_model(model_name='./paraphrase-multilingual-MiniLM-L12-v2')
         print("Usage: python main.py xxxx")

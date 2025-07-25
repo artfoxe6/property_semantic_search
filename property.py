@@ -10,11 +10,11 @@ def up_round_to_10(num):
     if num % 10 == 0:
         return num
     else:
-        return ((num // 10) + 1) * 10
+        return int((num // 10) + 1) * 10
 
 
 def down_round_to_10(num):
-    return (num // 10) * 10
+    return int(num // 10) * 10
 
 
 def number_to_chinese(num):
@@ -339,36 +339,6 @@ class Property:
 
         return queries
 
-    def property_to_query_texts(self):
-        queries = []
-        direction, price_text = choice(self.price_to_query_texts())
-        queries.append(
-            (1, direction, f"{self.district}有哪些{self.bedrooms}室{self.bathrooms}卫的{self.type}？{price_text}。"))
-        queries.append((2, "", f"找个{self.area}平左右的{self.bedrooms}房，在{self.district}。"))
-        direction, area_text = choice(self.area_to_query_texts())
-        queries.append((3, direction, f"{self.district}有没有{self.bedrooms}房，{area_text}，{price_text}"))
-        # 地铁需求
-        if self.distance_to_metro and self.distance_to_metro <= 1000:
-            queries.append((8, f"地铁附近的房子有推荐吗？在{self.district}，交通方便一点的。"))
-            queries.append((9, f"{self.district} {self.bedrooms}房 {self.area}平 地铁附近"))
-
-        # 学区房需求
-        if self.distance_to_school and self.distance_to_school <= 1500:
-            queries.append((10,
-                            f"想买套{self.get_synonyms('distance_to_school', self.distance_to_school)}的房子，最好在{self.district}，适合孩子上学。"))
-
-        # 车位需求
-        if self.carspaces > 0:
-            queries.append((11,
-                            f"有没有{self.get_synonyms('carspaces', self.carspaces)}的{self.get_synonyms('bedrooms', self.bedrooms)}推荐？最好在{self.district}附近。"))
-
-        # 新房偏好
-        if self.build_year > 2015:
-            queries.append((12,
-                            f"在{self.district}找个{self.build_year}年后的{self.get_synonyms('build_year', self.build_year)}"))
-
-        return queries
-
     def gen_negative_property(self, group):
         if group == 11:
             return self.negative_property_v2(["district", "bed", "bath", "price"])
@@ -413,7 +383,7 @@ class Property:
     # 构造负样本
     def negative_property_v2(self, mask=None):
         # 随机抛弃一个条件
-        mask = random.sample(mask, len(mask)- choice([0,len(mask)-1]))  # 生成新数组
+        mask = random.sample(mask, len(mask)- choice([0,len(mask)-1]))
         l = Location()
         # p = copy.deepcopy(self)
         p = Property()
@@ -452,71 +422,13 @@ class Property:
             elif m == 'build_year':
                 p.build_year = randint(2000, 2018)
             elif m == 'district':
-                p.district = l.randomDistrict(self.district)
+                # 由于每个负面条件都包括district，过于简单，设置一半的概率相同
+                if random.random() < 0.5:
+                    p.district = l.randomDistrict(self.district)
+                else:
+                    p.district = self.district
         p.description = p.combine_description()
         return p.description
-
-    def negative_property(self, district=None, bed=None, bath=None, car=None, area=None, price=None, b_y=None,
-                          type=None, dis_m=None,
-                          dis_s=None, compare=None):
-        p = copy.deepcopy(self)
-        diff = 0
-
-        if bed is not None:
-            p.bedrooms = bed + choice([-3, -2, -1, 1, 2, 3])
-            if p.bedrooms != p.bedrooms:
-                diff += 1
-
-        if bath is not None:
-            p.bathrooms = bath + choice([-2, -1, 1, 2])
-            if p.bathrooms != p.bathrooms:
-                diff += 1
-
-        if car is not None:
-            p.carspaces = car + choice([-2, -1, 1, 2])
-            if car != car:
-                diff += 1
-
-        if area is not None:
-            p.area = area + choice([randint(10, 100), randint(-50, 10)])
-            if area < 10:
-                p.area = randint(0, 10)
-            if p.area != area:
-                diff += 1
-
-        if price is not None:
-            p.price = price + choice([randint(10, 100), randint(-50, 10)])
-            if price < 10:
-                p.price = randint(0, 10)
-            if p.price != price:
-                diff += 1
-
-        if b_y is not None:
-            p.build_year = b_y + randint(-30, -5)
-            if p.build_year != b_y:
-                diff += 1
-
-        if type is not None:
-            p.type = random.choice([t for t in ["住宅", "公寓", "别墅"] if t != self.type])
-            if p.type != type:
-                diff += 1
-
-        if dis_m is not None:
-            p.distance_to_metro = randint(1500, 3000)
-            if p.distance_to_metro != dis_m:
-                diff += 1
-        if dis_s is not None:
-            p.distance_to_school = randint(1500, 3000)
-            if p.distance_to_school != dis_s:
-                diff += 1
-
-        if district is not None:
-            l = Location()
-            p.province, p.city, p.district = l.randomLocationExclude(self.district)
-        else:
-            p.province, p.city, p.district = self.province, self.city, self.district
-
-        p.description = self.combine_description()
 
     def get_synonyms(self, field, value):
         property_synonym_map = {
@@ -608,5 +520,5 @@ class Property:
 if __name__ == "__main__":
     p = Property()
     p.random_value()
-    print(f"{down_round_to_10(p.price - p.price / 10)}到{up_round_to_10(p.price + p.price / 10)}万")
+    # print(f"{down_round_to_10(p.price - p.price / 10)}到{up_round_to_10(p.price + p.price / 10)}万")
     print(p.description)
