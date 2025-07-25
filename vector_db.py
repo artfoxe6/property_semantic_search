@@ -44,7 +44,7 @@ class VectorDB:
             field_name="desc_vector",
             index_name="desc_vector_index",
             index_type="FLAT",  # https://milvus.io/docs/zh/index-explained.md
-            metric_type="L2"  # 度量类型，有多种可以对比效果 https://milvus.io/docs/zh/metric.md，可以考虑使用多种度量类型分别搜索，综合排序
+            metric_type="COSINE"  # 度量类型，有多种可以对比效果 https://milvus.io/docs/zh/metric.md，可以考虑使用多种度量类型分别搜索，综合排序
         )
 
         self.client.create_collection(
