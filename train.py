@@ -25,15 +25,6 @@ def load_triplet_data(csv_path):
         examples.append(InputExample(texts=[row['query'], row['positive'], row['negative']]))
     return examples
 
-
-# def load_dev_pairs(dev_path):
-#     df = pd.read_csv(dev_path)
-#     examples = []
-#     for _, row in df.iterrows():
-#         examples.append(InputExample(texts=[row['query'], row['positive']], label=1.0))
-#     return examples
-
-
 def build_model(pretrained_model='sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'):
     word_embedding_model = models.Transformer(pretrained_model)
 
@@ -118,7 +109,7 @@ def train_model(csv_path='./train_data.csv', output_path='./train_model', batch_
     emb_q = model.encode(query)
     emb_p = model.encode(positive)
 
-    cos_sim = np.dot(emb_q, emb_p) / (np.linalg.norm(emb_q) * int(np.linalg.norm(emb_p)))
+    cos_sim = np.dot(emb_q, emb_p) / (np.linalg.norm(emb_q) * np.linalg.norm(emb_p))
     print("Cosine similarity:", cos_sim)
 
 

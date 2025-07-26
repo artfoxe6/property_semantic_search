@@ -45,7 +45,7 @@ def gen_milvus_data(num=1000):
         p_dict = p.to_dict()
         p_dict["desc_vector"] = bert.text2vector(p.description)
         v_db.upsert([p_dict])
-        num -= 1
+        count += 1
         id += 1
         if count % (num / 10) == 0:
             print(f"{count}/{num}")
@@ -56,19 +56,29 @@ def gen_milvus_data(num=1000):
 def gen_property_data(train_num=10000, milvus_num=10000):
     print(f"gen property data {train_num}")
     s_db = SqliteDB("property.db")
-    while train_num > 0:
+    count = 0
+    while True:
         prop = Property()
         prop.random_value()
         s_db.add_property(prop)
-        train_num -= 1
+        count +=1
+        if count % (train_num / 10) == 0:
+            print(f"{count}/{train_num}")
+        if count >= train_num:
+            break
 
     print(f"gen property data {milvus_num}")
     s_db = SqliteDB("property_milvus.db")
-    while milvus_num > 0:
+    count = 0
+    while True:
         prop = Property()
         prop.random_value()
         s_db.add_property(prop)
-        milvus_num -= 1
+        count +=1
+        if count >= milvus_num:
+            break
+        if count % (milvus_num / 10) == 0:
+            print(f"{count}/{milvus_num}")
 
 
 def sync_to_milvus(num=10000):
@@ -144,7 +154,7 @@ def gen_training_data(tran_count=10000, dev_count=1000):
 
 # PYTORCH_MPS_HIGH_WATERMARK_RATIO=0.0 python main.py all
 if __name__ == '__main__':
-    train_num = 30000
+    train_num = 1000000
     step = ""
     if len(sys.argv) == 2:
         step = sys.argv[1]
