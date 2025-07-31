@@ -15,7 +15,7 @@ class SentenceBert:
         # self.model = SentenceTransformer('all-MiniLM-L6-v2')
 
     def text2vector(self, text):
-        return self.model.encode(text, normalize_embeddings=True)
+        return self.model.encode(text, normalize_embeddings=True).tolist()
 
     # 计算两个query的相似度
     def similarity(self, query1, query2):
@@ -31,7 +31,7 @@ if __name__ == "__main__":
         queryStr = sys.argv[1]
         sbert = SentenceBert()
 
-        print("["+",".join(map(str, sbert.text2vector(queryStr)))+"]")
+        print(sbert)
         sys.exit(1)
     elif len(sys.argv) == 3:
         sbert = SentenceBert()

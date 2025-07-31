@@ -59,7 +59,7 @@ class VectorDB:
             data=data
         )
 
-    def search(self, vector, top_k=5):
+    def search(self, vector, top_k=15):
         results = self.client.search(
             collection_name=self.collection_name,
             query_vector=vector,

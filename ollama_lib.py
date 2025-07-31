@@ -3,10 +3,10 @@ import json
 import requests
 
 from property import Property
+OLLAMA_URL = "http://localhost:11434/api/generate"
 
-
-class ollama:
-    ollama_url = "http://localhost:11434/api/generate"
+class ollama_lib:
+    # ollama_url = "http://localhost:11434/api/generate"
 
     @classmethod
     def generate_description(cls, prompt: str):
@@ -18,7 +18,7 @@ class ollama:
         }
 
         # 发起请求
-        response = requests.post(ollama.ollama_url, json=payload)
+        response = requests.post(OLLAMA_URL, json=payload)
         # 解析返回结果
         if response.status_code == 200:
             result = response.json()
