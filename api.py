@@ -1,3 +1,4 @@
+import json
 import re
 
 import ollama
@@ -29,16 +30,8 @@ from sbert import SentenceBert
 MILVUS_HOST = "localhost"
 MILVUS_PORT = "19530"
 COLLECTION_NAME = "properties"
-# OLLAMA_MODEL = 'qwen3:8b'
-OLLAMA_MODEL = 'deepseek-r1:1.5b'
-
-
-# 假设你已经有一个 text2vector 函数（返回长度为384的list[float]）
-def text2vector(text: str) -> List[float]:
-    # 示例：调用 sentence-transformers 或其他 embedding 模型
-    # 这里仅模拟，实际应替换为真实模型
-    import random
-    return [random.random() for _ in range(384)]
+OLLAMA_MODEL = 'qwen3:8b'
+# OLLAMA_MODEL = 'deepseek-r1:1.5b'
 
 
 # 初始化 FastAPI
@@ -88,80 +81,106 @@ class SearchResponse(BaseModel):
 
 def filter_and_comment_with_ollama(query: str, candidates: List[Dict]) -> List[Dict]:
     """
-    使用 Ollama 模型：
-    1. 过滤不满足 query 条件的房产
-    2. 为保留的房产生成 AI 点评
+    使用 Ollama 一次性完成：
+    1. 过滤符合条件的房源
+    2. 为符合条件的房源生成 AI 点评
     """
-    filtered_with_comment = []
+    if not candidates:
+        return []
 
-    for prop in candidates:
-        # Step 1: 判断是否符合条件
-        filter_prompt = f"""
-        你是一个房产专家。请判断以下房源是否满足用户的需求。
-        距离地铁1000米内认为很近
-        价格和面积相差不过20%当作满足
-        地区和房间数需要严格满足查询条件
+    # 构造输入房源信息
+    properties_str = "\n---\n".join([
+        f"ID: {prop['id']}\n"
+        f"户型：{prop['bedrooms']}室{prop['bathrooms']}厅{prop['carspaces']}车位\n"
+        f"面积：{prop['area']}平米\n"
+        f"价格：{prop['price']}万元\n"
+        f"地区：{prop['province']}-{prop['city']}-{prop['district']}\n"
+        f"装修：{prop['decoration']}\n"
+        f"建造年份：{prop['build_year']}\n"
+        f"地铁距离：{prop['distance_to_metro']}米\n"
+        f"学校距离：{prop['distance_to_school']}米\n"
+        for prop in candidates
+    ])
 
-        用户需求：{query}
+    system_prompt = """
+你是一个专业的房产分析师。请根据用户需求，判断每个房源是否满足条件，并为满足条件的房源撰写一段100字左右的中文点评。
 
-        房源信息：
-        - 户型：{prop['bedrooms']}室{prop['bathrooms']}厅{prop['carspaces']}车位
-        - 面积：{prop['area']}平米
-        - 价格：{prop['price']}万元
-        - 楼层：{prop['floor']}
-        - 城市：{prop['province']}-{prop['city']}-{prop['district']}
-        - 装修：{prop['decoration']}
-        - 建造年份：{prop['build_year']}
-        - 地铁距离：{prop['distance_to_metro']}米
-        - 学校距离：{prop['distance_to_school']}米
-        - 描述：{prop['description']}
+判断标准：
+- 地区和房间数必须严格满足。
+- 价格和面积允许±20%浮动。
+- 距离地铁1000米以内视为“近地铁”。
 
-        不要解释为什么，请回答“是”或“否”，仅输出一个字。
-        """
+输出格式要求：
+- 必须返回一个 JSON 数组，每个元素包含：
+  - "id": 房源ID（整数）
+  - "include": 是否满足需求（布尔值）
+  - "comment": 满足时生成点评，不满足时为空字符串
+- 仅输出 JSON，不要任何解释、不要 Markdown、不要额外文本。
+- 使用双引号，确保是合法 JSON。
+""".strip()
 
-        try:
-            filter_response = ollama.generate(
-                model=OLLAMA_MODEL,
-                prompt=filter_prompt,
-                options={"temperature": 0.0}
-            )
-            cleaned_output = re.sub(r'<think>.*?</think>', '', filter_response['response'].strip(), flags=re.DOTALL).strip()
-            is_match = cleaned_output.strip().lower() == '是'
-        except Exception as e:
-            print(f"Ollama filter error: {e}")
-            is_match = False  # 出错时保守保留
+    user_prompt = f"""
+用户需求：{query}
 
-        if not is_match:
-            continue
+请评估以下房源：
 
-        # Step 2: 生成 AI 点评
-        comment_prompt = f"""
-        你是专业房产分析师，请用中文为以下优质房源写一段100字左右的点评，突出亮点，语气亲切专业。
+{properties_str}
 
-        户型：{prop['bedrooms']}室{prop['bathrooms']}厅，面积{prop['area']}㎡，价格{prop['price']}万元
-        楼层：{prop['floor']}，建造年份：{prop['build_year']}，装修：{prop['decoration']}
-        位置：{prop['province']}-{prop['city']}-{prop['district']}
-        地铁距离：{prop['distance_to_metro']}米，学校距离：{prop['distance_to_school']}米
-        描述：{prop['description']}
+请按要求返回 JSON 数组：
+""".strip()
 
-        请生成一段吸引人的点评：
-        """
-        try:
-            comment_response = ollama.generate(
-                model=OLLAMA_MODEL,
-                prompt=comment_prompt,
-                options={"temperature": 0.7}
-            )
-            cleaned_output = re.sub(r'<think>.*?</think>', '', comment_response['response'].strip(),
-                                    flags=re.DOTALL).strip()
-            ai_comment = cleaned_output.strip()
-        except Exception as e:
-            ai_comment = "AI点评生成失败。"
+    try:
+        response = ollama.generate(
+            model=OLLAMA_MODEL,
+            prompt=f"{system_prompt}\n\n{user_prompt}",
+            options={
+                "temperature": 0.7,
+                "num_ctx": 8192,  # 确保上下文足够
+            },
+            format="json"  # 强制返回 JSON 格式（需要模型支持）
+        )
+        text = response['response'].strip()
 
-        prop['ai_comment'] = ai_comment
-        filtered_with_comment.append(prop)
+        # 清理可能的 think 标签等非 JSON 内容
+        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+        text = text.strip()
+        if text.startswith("```json"):
+            text = text[7:-3].strip()  # 去掉 ```json 和 ```
 
-    return filtered_with_comment
+        parsed_results = json.loads(text)
+
+        # 验证格式
+        if not isinstance(parsed_results, list):
+            raise ValueError("JSON 响应不是数组")
+
+        # 映射回原始数据并添加点评
+        id_to_prop = {prop['id']: prop for prop in candidates}
+        filtered_with_comment = []
+
+        for item in parsed_results:
+            prop_id = item.get("id")
+            include = item.get("include", False)
+            comment = (item.get("comment") or "").strip()
+
+            if prop_id not in id_to_prop:
+                continue
+            if not include:
+                continue
+
+            prop = id_to_prop[prop_id]
+            prop['ai_comment'] = comment if comment else "这是一套符合您需求的优质房源。"
+            filtered_with_comment.append(prop)
+
+        return filtered_with_comment
+
+    except Exception as e:
+        logging.error(f"Ollama 批量处理失败: {e}")
+        # 备降：保守全部保留，生成基础点评
+        fallback_results = []
+        for prop in candidates:
+            prop['ai_comment'] = "AI点评生成中..."
+            fallback_results.append(prop)
+        return fallback_results
 
 
 # ==================== FastAPI 接口 ====================
