@@ -8,6 +8,7 @@ from typing import List, Dict, Any
 from pymilvus import connections, Collection, FieldSchema, DataType
 import logging
 from sbert import SentenceBert
+from fastapi.middleware.cors import CORSMiddleware  # 导入 CORS 中间件
 
 """
     启动api服务
@@ -31,11 +32,26 @@ MILVUS_HOST = "localhost"
 MILVUS_PORT = "19530"
 COLLECTION_NAME = "properties"
 OLLAMA_MODEL = 'qwen3:8b'
-# OLLAMA_MODEL = 'deepseek-r1:1.5b'
+# OLLAMA_MODEL = 'qwen3:0.6b'
 
 
 # 初始化 FastAPI
 app = FastAPI(title="房产智能搜索接口")
+# 配置 CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[  # 明确列出前端地址
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "http://localhost:5173",   # Vite 默认
+        "http://127.0.0.1:5173",
+        "http://localhost:63342",
+        ["*"],
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],      # 允许 POST, GET, OPTIONS 等
+    allow_headers=["*"],      # 允许所有请求头
+)
 
 # 连接 Milvus
 try:
@@ -70,7 +86,7 @@ class PropertyResult(BaseModel):
     distance_to_metro: float
     distance_to_school: float
     description: str
-    ai_comment: str
+    # ai_comment: str
 
 
 class SearchResponse(BaseModel):
@@ -91,10 +107,11 @@ def filter_and_comment_with_ollama(query: str, candidates: List[Dict]) -> List[D
     # 构造输入房源信息
     properties_str = "\n---\n".join([
         f"ID: {prop['id']}\n"
-        f"户型：{prop['bedrooms']}室{prop['bathrooms']}厅{prop['carspaces']}车位\n"
+        f"地区：{prop['district']}\n"
+        f"户型：{prop['bedrooms']}室{prop['bathrooms']}卫\n"
         f"面积：{prop['area']}平米\n"
         f"价格：{prop['price']}万元\n"
-        f"地区：{prop['province']}-{prop['city']}-{prop['district']}\n"
+        f"车位：{prop['carspaces']}车位\n"
         f"装修：{prop['decoration']}\n"
         f"建造年份：{prop['build_year']}\n"
         f"地铁距离：{prop['distance_to_metro']}米\n"
@@ -102,44 +119,80 @@ def filter_and_comment_with_ollama(query: str, candidates: List[Dict]) -> List[D
         for prop in candidates
     ])
 
-    system_prompt = """
-你是一个专业的房产分析师。请根据用户需求，判断每个房源是否满足条件，并为满足条件的房源撰写一段100字左右的中文点评。
+    system_prompt1 = """
+    你是一个专业的房产分析师，请根据用户需求，逐个判断下面每个房源是否满足要求，并为所有满足条件的房源撰写一段简短中文点评（约100字）,不符合条件的房源编辑原因。
 
-判断标准：
-- 地区和房间数必须严格满足。
-- 价格和面积允许±20%浮动。
-- 距离地铁1000米以内视为“近地铁”。
+    判断标准如下：
+    1. 地区（district）必须严格匹配；
+    2. 房间数（bedrooms、bathrooms）必须满足；
+    3. 面积和价格允许 ±20% 浮动；
+    4. 地铁距离在 1000 米以内视为“近地铁”。
 
-输出格式要求：
-- 必须返回一个 JSON 数组，每个元素包含：
-  - "id": 房源ID（整数）
-  - "include": 是否满足需求（布尔值）
-  - "comment": 满足时生成点评，不满足时为空字符串
-- 仅输出 JSON，不要任何解释、不要 Markdown、不要额外文本。
-- 使用双引号，确保是合法 JSON。
-""".strip()
+    输出要求：
+    - 输出一个 **完整的 JSON 数组**，每个元素包含以下字段：
+      - "id"：房源ID，整数
+      - "include"：布尔值，表示是否符合需求
+      - "comment"：字符串。当 include 为 true 时填写点评，否则填写原因
+    - 必须逐条评估输入中的每个房源，不能跳过；
+    - 不能省略字段；
+    - 输出所有房源，include为 true和false都需要输出，必须是合法 JSON，不允许出现 Markdown、解释说明或其它文本。
+
+    【格式示例】：
+    [
+      {"id": 1, "include": true, "comment": "这套房源位于核心区域，三房两卫，靠近地铁，性价比高。"},
+      {"id": 2, "include": false, "comment": "查询条件的房间数和目标房源不匹配"},
+      ...
+    ]
+
+    请严格遵守格式要求。
+    """.strip()
 
     user_prompt = f"""
-用户需求：{query}
+    {system_prompt1}
+    
+    
+    用户需求：{query}
 
-请评估以下房源：
+    以下是候选房源信息：
 
-{properties_str}
+    {properties_str}
 
-请按要求返回 JSON 数组：
-""".strip()
-
+    请评估每套房源并输出 JSON 数组结果：
+    """.strip()
+    print(f"{system_prompt1}\n\n{user_prompt}")
     try:
-        response = ollama.generate(
-            model=OLLAMA_MODEL,
-            prompt=f"{system_prompt}\n\n{user_prompt}",
+        # response = ollama.generate(
+        #     model=OLLAMA_MODEL,
+        #     prompt=f"{system_prompt}\n\n{user_prompt}",
+        #     options={
+        #         "temperature": 0.7,
+        #         "num_ctx": 8192,  # 确保上下文足够
+        #     },
+        #     format="json"  # 强制返回 JSON 格式（需要模型支持）
+        # )
+        # text = response['response'].strip()
+
+        # 假设你的 system_prompt 和 user_prompt 已定义
+        system_prompt = "You are a helpful assistant."  # Open WebUI 默认常用 system prompt
+        # user_prompt = "请介绍一下你自己。"
+
+        response = ollama.chat(
+            model=OLLAMA_MODEL,  # 如 'llama3' 或 'mistral' 等
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
             options={
                 "temperature": 0.7,
-                "num_ctx": 8192,  # 确保上下文足够
+                "num_ctx": 8192,
+                "top_p": 0.9,
+                "frequency_penalty": 0.0,
+                # 可根据需要添加更多参数
             },
-            format="json"  # 强制返回 JSON 格式（需要模型支持）
+            format="json"  # 如果模型支持 JSON 输出格式（需模型训练支持）
         )
-        text = response['response'].strip()
+
+        text = response['message']['content'].strip()
 
         # 清理可能的 think 标签等非 JSON 内容
         text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
@@ -147,12 +200,10 @@ def filter_and_comment_with_ollama(query: str, candidates: List[Dict]) -> List[D
         if text.startswith("```json"):
             text = text[7:-3].strip()  # 去掉 ```json 和 ```
 
-        parsed_results = json.loads(text)
-
-        # 验证格式
-        if not isinstance(parsed_results, list):
-            raise ValueError("JSON 响应不是数组")
-
+        text = re.sub(r'\n', '', text, flags=re.DOTALL)
+        ok, parsed_results = safe_json_loads(text)
+        if not ok:
+            raise ValueError(f"JSON 解析失败: {parsed_results}")
         # 映射回原始数据并添加点评
         id_to_prop = {prop['id']: prop for prop in candidates}
         filtered_with_comment = []
@@ -183,6 +234,14 @@ def filter_and_comment_with_ollama(query: str, candidates: List[Dict]) -> List[D
         return fallback_results
 
 
+def safe_json_loads(s):
+    try:
+        obj = json.loads(s)
+        return True, obj
+    except json.JSONDecodeError as e:
+        return False, str(e)
+
+
 # ==================== FastAPI 接口 ====================
 @app.post("/search", response_model=SearchResponse)
 async def search_properties(request: SearchRequest):
@@ -190,6 +249,8 @@ async def search_properties(request: SearchRequest):
         sb = SentenceBert()
         # 1. 文本转向量
         query_vector = sb.text2vector(request.query)
+        print(request.query)
+        print(query_vector)
 
         # 2. Milvus 搜索
         search_params = {
@@ -201,7 +262,7 @@ async def search_properties(request: SearchRequest):
             data=[query_vector],
             anns_field="desc_vector",
             param=search_params,
-            limit=5,
+            limit=15,
             output_fields=[
                 "id", "bedrooms", "bathrooms", "carspaces", "floor", "area", "price",
                 "province", "city", "district", "build_year", "list_at", "decoration",
@@ -235,8 +296,9 @@ async def search_properties(request: SearchRequest):
             candidates.append(prop)
 
         # 4. 使用 Ollama 过滤 + 生成点评
-        final_results = filter_and_comment_with_ollama(request.query, candidates)
-
+        # final_results = filter_and_comment_with_ollama(request.query, candidates)
+        # 组装 返回结果 List[PropertyResult]
+        final_results = [PropertyResult(**prop) for prop in candidates]
         # 5. 返回结果
         return SearchResponse(results=final_results)
 
@@ -250,7 +312,7 @@ def health_check():
     return {"status": "OK", "milvus": "connected" if connections.has_connection("default") else "disconnected"}
 
 
-
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8010)
+
+    uvicorn.run(app, host="0.0.0.0", port=8010)

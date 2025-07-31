@@ -1,246 +1,294 @@
 <!DOCTYPE html>
 <html lang="zh">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>房产搜索</title>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>房产搜索</title>
 
-  <!-- 引入 Google Fonts：中文支持 & 现代字体 -->
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <!-- 引入 Google Fonts：中文支持 & 现代字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Roboto:wght@400;500&display=swap"
+          rel="stylesheet">
 
-  <!-- 引入 Font Awesome 小图标 -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 引入 Font Awesome 小图标 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- Vue 3 CDN -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <!-- Vue 3 CDN -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 
-  <style>
-    body {
-      font-family: 'Noto Sans SC', 'Roboto', sans-serif;
-      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding-top: 40px;
-      color: #333;
-    }
+    <style>
+        body {
+          font-family: 'Noto Sans SC', 'Roboto', sans-serif;
+          background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+          margin: 0;
+          padding: 0;
+          min-height: 100vh;
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          padding-top: 40px;
+          color: #333;
+        }
 
-    .container {
-      width: 50vw;
-      max-width: 1400px;
-      min-width: 800px;
-      padding: 50px;
-      background: #ffffff;
-      border-radius: 20px;
-      box-shadow: 0 12px 36px rgba(0, 82, 204, 0.15);
-      border: 1px solid #e0e8f3;
-    }
+        .container {
+          width: 50vw;
+          max-width: 1400px;
+          min-width: 800px;
+          padding: 50px;
+          background: #ffffff;
+          border-radius: 20px;
+          box-shadow: 0 12px 36px rgba(0, 82, 204, 0.15);
+          border: 1px solid #e0e8f3;
+        }
 
-    h1 {
-      text-align: center;
-      font-size: 38px;
-      font-weight: 700;
-      color: #0d47a1;
-      margin-bottom: 35px;
-      letter-spacing: 0.5px;
-      text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
+        h1 {
+          text-align: center;
+          font-size: 38px;
+          font-weight: 700;
+          color: #0d47a1;
+          margin-bottom: 35px;
+          letter-spacing: 0.5px;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
 
-    .search-box {
-      width: 100%;
-      padding: 22px;
-      font-size: 20px;
-      font-weight: 500;
-      color: #2c3e50;
-      border: 2px solid #0d6efd;
-      border-radius: 16px;
-      outline: none;
-      box-sizing: border-box;
-      margin-bottom: 40px;
-      background-color: #f0f7ff;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 12px rgba(13, 110, 253, 0.1);
-    }
+        .search-box {
+          width: 100%;
+          padding: 22px;
+          font-size: 20px;
+          font-weight: 500;
+          color: #2c3e50;
+          border: 2px solid #0d6efd;
+          border-radius: 16px;
+          outline: none;
+          box-sizing: border-box;
+          margin-bottom: 40px;
+          background-color: #f0f7ff;
+          transition: all 0.3s ease;
+          box-shadow: 0 4px 12px rgba(13, 110, 253, 0.1);
+        }
 
-    .search-box:focus {
-      border-color: #0b5ed7;
-      box-shadow: 0 6px 20px rgba(13, 110, 253, 0.25);
-      transform: scale(1.01);
-    }
+        .search-box:focus {
+          border-color: #0b5ed7;
+          box-shadow: 0 6px 20px rgba(13, 110, 253, 0.25);
+          transform: scale(1.01);
+        }
 
-    .results-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 28px;
-    }
+        .results-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 28px;
+        }
 
-    @media (max-width: 1024px) {
-      .container {
-        width: 85vw;
-        padding: 35px;
-      }
-      h1 {
-        font-size: 34px;
-      }
-    }
+        @media (max-width: 1024px) {
+          .container {
+            width: 85vw;
+            padding: 35px;
+          }
+          h1 {
+            font-size: 34px;
+          }
+        }
 
-    @media (max-width: 768px) {
-      .container {
-        width: 95vw;
-        padding: 25px;
-      }
-      .results-grid {
-        grid-template-columns: 1fr;
-      }
-      h1 {
-        font-size: 28px;
-      }
-    }
+        @media (max-width: 768px) {
+          .container {
+            width: 95vw;
+            padding: 25px;
+          }
+          .results-grid {
+            grid-template-columns: 1fr;
+          }
+          h1 {
+            font-size: 28px;
+          }
+        }
 
-    .house-card {
-      padding: 30px;
-      border-radius: 16px;
-      background: linear-gradient(to bottom, #ffffff, #fcfdff);
-      border: 1px solid #dde5f0;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-      transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-      position: relative;
-      overflow: hidden;
-    }
+        .house-card {
+          padding: 30px;
+          border-radius: 16px;
+          background: linear-gradient(to bottom, #ffffff, #fcfdff);
+          border: 1px solid #dde5f0;
+          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+          position: relative;
+          overflow: hidden;
+        }
 
-    .house-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0;
-      width: 4px; height: 100%;
-      background: linear-gradient(to bottom, #0d6efd, #0d9ffb);
-      border-radius: 4px 0 0 4px;
-    }
+        .house-card::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0;
+          width: 4px; height: 100%;
+          background: linear-gradient(to bottom, #0d6efd, #0d9ffb);
+          border-radius: 4px 0 0 4px;
+        }
 
-    .house-card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.15);
-      border-color: #b8daff;
-    }
+        .house-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 14px 30px rgba(0, 0, 0, 0.15);
+          border-color: #b8daff;
+        }
 
-    .address {
-      font-size: 20px;
-      font-weight: 600;
-      color: #1a3a6e;
-      margin-bottom: 12px;
-    }
+        .address {
+          font-size: 20px;
+          font-weight: 600;
+          color: #1a3a6e;
+          margin-bottom: 12px;
+        }
 
-    .price {
-      font-size: 22px;
-      font-weight: bold;
-      color: #d32f2f;
-      margin-bottom: 14px;
-    }
+        .price {
+          font-size: 22px;
+          font-weight: bold;
+          color: #d32f2f;
+          margin-bottom: 14px;
+        }
 
-    .info {
-      font-size: 15px;
-      color: #444;
-      line-height: 1.7;
-    }
+        .info {
+          font-size: 15px;
+          color: #444;
+          line-height: 1.7;
+        }
 
-    .info i {
-      color: #0d6efd;
-      width: 18px;
-      margin-right: 4px;
-    }
+        .info i {
+          color: #0d6efd;
+          width: 18px;
+          margin-right: 4px;
+        }
 
-    .description {
-      font-style: italic;
-      color: #5a6b7c;
-      margin-top: 14px;
-      font-size: 14px;
-      line-height: 1.5;
-      border-top: 1px dashed #e0e7f1;
-      padding-top: 10px;
-    }
+        .description {
+          font-style: italic;
+          color: #5a6b7c;
+          margin-top: 14px;
+          font-size: 14px;
+          line-height: 1.5;
+          border-top: 1px dashed #e0e7f1;
+          padding-top: 10px;
+        }
 
-    .no-results {
-      grid-column: 1 / -1;
-      text-align: center;
-      color: #999;
-      font-style: italic;
-      padding: 40px;
-      font-size: 17px;
-      background: #f8f9fd;
-      border-radius: 12px;
-      border: 1px dashed #b8daff;
-    }
-  </style>
+        .no-results {
+          grid-column: 1 / -1;
+          text-align: center;
+          color: #999;
+          font-style: italic;
+          padding: 40px;
+          font-size: 17px;
+          background: #f8f9fd;
+          border-radius: 12px;
+          border: 1px dashed #b8daff;
+        }
+
+        .loading {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 30px;
+          font-size: 18px;
+          color: #666;
+        }
+    </style>
 </head>
 <body>
-  <div id="app">
+<div id="app">
     <div class="container">
-      <h1><i class="fas fa-home" style="color:#0d6efd;margin-right:8px;"></i>房产搜索</h1>
+        <h1><i class="fas fa-home" style="color:#0d6efd;margin-right:8px;"></i>房产搜索</h1>
 
-      <!-- 带图标的搜索框 -->
-      <input
-        type="text"
-        v-model="searchQuery"
-        placeholder="🔍 搜索地址、装修风格或描述关键词..."
-        class="search-box"
-      />
+        <!-- 搜索框：输入即搜索 -->
+        <input
+                type="text"
+                v-model="searchQuery"
+                placeholder="🔍 输入需求，如：找一个武侯区的三房两卫，总价100万，靠近地铁"
+                class="search-box"
+        />
 
-      <!-- 两列网格布局 -->
-      <div class="results-grid">
-        <div v-for="house in filteredHouses" :key="house.id" class="house-card">
-          <div class="address">{{ house.address }}</div>
-          <div class="price">¥{{ house.price.toLocaleString() }}</div>
-          <div class="info">
-            <i class="fas fa-bed"></i> {{ house.bedrooms }}室{{ house.bathrooms }}卫 | {{ house.beds }}床<br>
-            <i class="fas fa-paint-brush"></i> 装修风格: {{ house.style }}<br>
-            <i class="fas fa-subway"></i> 距地铁: {{ house.subway }}米<br>
-            <i class="fas fa-school"></i> 距学校: {{ house.school }}米
-          </div>
-          <div class="description">{{ house.description }}</div>
+        <!-- 结果区域 -->
+        <div class="results-grid">
+            <!-- 加载中 -->
+            <div v-if="loading" class="loading">
+                <i class="fas fa-spinner fa-spin"></i> 正在搜索房源...
+            </div>
+
+            <!-- 无结果 -->
+            <div v-else-if="houses.length === 0" class="no-results">
+                <i class="fas fa-search-minus" style="font-size:24px;margin-bottom:8px;color:#999;"></i><br>
+                暂无匹配的房源，请尝试其他关键词
+            </div>
+
+            <!-- 房源列表 -->
+            <!-- 房源列表 -->
+            <div v-for="house in houses" :key="house.id" class="house-card">
+                <div class="address">
+                    {{ house.province }} {{ house.city }} {{ house.district }}
+                </div>
+                <div class="price">¥{{ house.price.toLocaleString() }} 万</div>
+                <div class="info">
+                    <i class="fas fa-bed"></i> {{ house.bedrooms }}室{{ house.bathrooms }}卫<br>
+                    <i class="fas fa-ruler-combined"></i> 面积: {{ house.area }}㎡<br>
+                    <i class="fas fa-calendar-alt"></i> 建筑年代: {{ house.build_year }}年<br>
+                    <i class="fas fa-paint-brush"></i> 装修: {{ house.decoration }}<br>
+                    <i class="fas fa-subway"></i> 距地铁: {{ Math.round(house.distance_to_metro) }}米<br>
+                    <i class="fas fa-school"></i> 距学校: {{ Math.round(house.distance_to_school) }}米
+                </div>
+                <div class="description">{{ house.description }}</div>
+            </div>
         </div>
-
-        <div v-if="filteredHouses.length === 0" class="no-results">
-          <i class="fas fa-search-minus" style="font-size:24px;margin-bottom:8px;color:#999;"></i><br>
-          暂无匹配的房源，请尝试其他关键词
-        </div>
-      </div>
     </div>
-  </div>
-  
-  <script>
-    const { createApp, computed } = Vue;
+</div>
+
+<script>
+    const { createApp, ref, watch } = Vue;
 
     createApp({
-      data() {
-        return {
-          searchQuery: '',
-          houses: [
-            { id: 1, address: "北京市朝阳区建国路88号", price: 8500000, bedrooms: 3, bathrooms: 2, beds: 3, style: "现代简约", subway: 300, school: 800, description: "精装修，采光好，近商圈，适合家庭居住。" },
-            { id: 2, address: "上海市浦东新区张江路123号", price: 12000000, bedrooms: 4, bathrooms: 3, beds: 4, style: "北欧风", subway: 150, school: 500, description: "高端小区，带车位，智能家居系统。" },
-            { id: 3, address: "广州市天河区体育西路45号", price: 6800000, bedrooms: 2, bathrooms: 1, beds: 2, style: "中式古典", subway: 500, school: 1200, description: "交通便利，周边配套齐全，适合年轻人。" },
-            { id: 4, address: "深圳市南山区科技园66号", price: 15000000, bedrooms: 5, bathrooms: 4, beds: 5, style: "轻奢现代", subway: 100, school: 600, description: "一线海景，顶层复式，私密性强。" },
-            { id: 5, address: "杭州市西湖区文三路77号", price: 9200000, bedrooms: 3, bathrooms: 2, beds: 3, style: "日式原木", subway: 400, school: 700, description: "安静宜居，近公园，适合养老或居家。" },
-            { id: 6, address: "成都市高新区天府大道111号", price: 7500000, bedrooms: 3, bathrooms: 2, beds: 3, style: "现代简约", subway: 200, school: 900, description: "交通便利，配套成熟，投资自住皆宜。" },
-            { id: 7, address: "南京市鼓楼区中山北路222号", price: 8800000, bedrooms: 4, bathrooms: 2, beds: 4, style: "美式乡村", subway: 600, school: 1000, description: "老城区优质学区房，生活便利。" },
-            { id: 8, address: "武汉市江汉区解放大道888号", price: 6200000, bedrooms: 3, bathrooms: 1, beds: 3, style: "现代简约", subway: 250, school: 750, description: "地铁口物业，出租回报率高。" }
-          ]
+      setup() {
+        const searchQuery = ref('找一个武侯区的三房两卫，总价100万，靠近地铁');
+        const houses = ref([]);
+        const loading = ref(false);
+        let debounceTimer = null;
+
+        // 搜索函数：发送请求
+        const searchHouses = async (query) => {
+          if (!query.trim()) {
+            houses.value = [];
+            return;
+          }
+
+          loading.value = true;
+          try {
+            const response = await fetch('http://localhost:8010/search', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ query })
+            });
+
+            if (!response.ok) throw new Error('网络错误');
+
+            const data = await response.json();
+            houses.value = Array.isArray(data.results) ? data.results : [];
+          } catch (err) {
+            console.error('搜索失败:', err);
+            houses.value = [];
+            alert('搜索失败，请检查服务是否运行（http://localhost:8010/search）');
+          } finally {
+            loading.value = false;
+          }
         };
-      },
-      computed: {
-        filteredHouses() {
-          const query = this.searchQuery.trim().toLowerCase();
-          if (!query) return this.houses;
-          return this.houses.filter(house =>
-            house.address.toLowerCase().includes(query) ||
-            house.style.toLowerCase().includes(query) ||
-            house.description.toLowerCase().includes(query)
-          );
-        }
+
+        // 监听 searchQuery 变化，使用防抖
+        watch(searchQuery, (newQuery) => {
+          // 清除之前的定时器
+          if (debounceTimer) clearTimeout(debounceTimer);
+
+          // 设置新的延迟请求
+          debounceTimer = setTimeout(() => {
+            searchHouses(newQuery);
+          }, 1000); // 延迟 600ms，确保输入暂停后再请求
+        });
+
+        return {
+          searchQuery,
+          houses,
+          loading
+        };
       }
     }).mount('#app');
-  </script>
+</script>
 </body>
 </html>
