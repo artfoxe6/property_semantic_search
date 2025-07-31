@@ -30,7 +30,7 @@ MILVUS_HOST = "localhost"
 MILVUS_PORT = "19530"
 COLLECTION_NAME = "properties"
 # OLLAMA_MODEL = 'qwen3:8b'
-OLLAMA_MODEL = 'qwen3:0.6b'
+OLLAMA_MODEL = 'deepseek-r1:1.5b'
 
 
 # 假设你已经有一个 text2vector 函数（返回长度为384的list[float]）
@@ -116,12 +116,12 @@ def filter_and_comment_with_ollama(query: str, candidates: List[Dict]) -> List[D
         - 学校距离：{prop['distance_to_school']}米
         - 描述：{prop['description']}
 
-        请回答“是”或“否”，仅输出一个字。
+        不要解释为什么，请回答“是”或“否”，仅输出一个字。
         """
 
         try:
             filter_response = ollama.generate(
-                model=OLLAMA_MODEL,  # 可替换为你本地加载的模型名，如 llama3, qwen:7b 等
+                model=OLLAMA_MODEL,
                 prompt=filter_prompt,
                 options={"temperature": 0.0}
             )
@@ -182,7 +182,7 @@ async def search_properties(request: SearchRequest):
             data=[query_vector],
             anns_field="desc_vector",
             param=search_params,
-            limit=15,
+            limit=5,
             output_fields=[
                 "id", "bedrooms", "bathrooms", "carspaces", "floor", "area", "price",
                 "province", "city", "district", "build_year", "list_at", "decoration",
