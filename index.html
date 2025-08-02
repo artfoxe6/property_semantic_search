@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>房产搜索</title>
 
-    <!-- 引入 Google Fonts：中文支持 & 现代字体 -->
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Roboto:wght@400;500&display=swap"
           rel="stylesheet">
 
-    <!-- 引入 Font Awesome 小图标 -->
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <!-- Vue 3 CDN -->
@@ -17,205 +17,268 @@
 
     <style>
         body {
-          font-family: 'Noto Sans SC', 'Roboto', sans-serif;
-          background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
-          margin: 0;
-          padding: 0;
-          min-height: 100vh;
-          display: flex;
-          justify-content: center;
-          align-items: flex-start;
-          padding-top: 10px;
-          color: #333;
+            font-family: 'Noto Sans SC', 'Roboto', sans-serif;
+            background: #f8fafc;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            color: #475569;
+            line-height: 1.6;
+            /* 移除 justify-content: center，避免干扰 */
         }
 
-        .container {
-          width: 50vw;
-          max-width: 1400px;
-          min-width: 800px;
-          padding: 50px;
-          background: #ffffff;
-          border-radius: 20px;
-          box-shadow: 0 12px 36px rgba(0, 82, 204, 0.15);
-          border: 1px solid #e0e8f3;
+        /* Banner 更高 */
+        .banner {
+            width: 100%;
+            height: 320px;
+            background-image: url('./banner.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+            font-size: 34px;
+            font-weight: bold;
+            z-index: 1;
         }
 
-        h1 {
-          text-align: center;
-          font-size: 38px;
-          font-weight: 700;
-          color: #0d47a1;
-          margin-bottom: 35px;
-          letter-spacing: 0.5px;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.1);
-        }
 
+.banner::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: linear-gradient(to bottom, rgba(30, 58, 138, 0.6), rgba(30, 58, 138, 0.4));
+    z-index: 1;
+}
+
+.banner > span {
+    position: relative;
+    z-index: 2;
+}
+
+.search-overlay {
+    position: absolute;
+    top: 240px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 800px;
+    z-index: 10;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+}
+
+        /* 搜索输入框 */
         .search-box {
-          width: 100%;
-          padding: 22px;
-          font-size: 20px;
-          font-weight: 500;
-          color: #2c3e50;
-          border: 2px solid #0d6efd;
-          border-radius: 16px;
-          outline: none;
-          box-sizing: border-box;
-          margin-bottom: 40px;
-          background-color: #f0f7ff;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 12px rgba(13, 110, 253, 0.1);
+            flex: 1;
+            padding: 16px 16px 16px 12px;
+            font-size: 17px;
+            color: #1e293b;
+            border: none;
+            outline: none;
+            background: transparent;
         }
 
-        .search-box:focus {
-          border-color: #0b5ed7;
-          box-shadow: 0 6px 20px rgba(13, 110, 253, 0.25);
-          transform: scale(1.01);
+        /* 清空按钮和搜索按钮容器 */
+        .search-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
+
+        /* 清空按钮 × */
+        .btn-clear {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #94a3b8;
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            opacity: 0.8;
+        }
+
+        .btn-clear:hover {
+            color: #64748b;
+            background: #e2e8f0;
+            opacity: 1;
+        }
+
+        /* 搜索按钮 */
+        .btn-search {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn-search:hover {
+            background: #2563eb;
+            transform: scale(1.05);
+        }
+
+        .btn-search:active {
+            transform: scale(0.98);
+        }
+
+        /* 主容器 */
+    .container {
+        width: 100%; /* 改为 100%，配合 max-width 实现响应式居中 */
+        max-width: 1600px;
+        min-width: 800px;
+        padding: 50px;
+        background: #ffffff;
+        border-radius: 24px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e2e8f0;
+        margin: 50px auto 0; /* 上下间距 + 左右自动居中 */
+        backdrop-filter: blur(4px);
+    }
 
         .results-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
-          gap: 28px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 28px;
         }
 
-        @media (max-width: 1024px) {
-          .container {
-            width: 85vw;
-            padding: 35px;
-          }
-          h1 {
-            font-size: 34px;
-          }
+        @media (max-width: 1280px) {
+            .results-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 768px) {
-          .container {
-            width: 95vw;
-            padding: 25px;
-          }
-          .results-grid {
-            grid-template-columns: 1fr;
-          }
-          h1 {
-            font-size: 28px;
-          }
+            .search-overlay {
+                width: 90%;
+                top: 220px;
+                padding: 6px;
+            }
+            .search-box {
+                font-size: 16px;
+            }
+            .btn-search, .btn-clear {
+                width: 36px;
+                height: 36px;
+            }
+            .container {
+                width: 95vw;
+                padding: 25px;
+            }
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
+        /* 房源卡片样式保持不变 */
         .house-card {
-          padding: 30px;
-          border-radius: 16px;
-          background: linear-gradient(to bottom, #ffffff, #fcfdff);
-          border: 1px solid #dde5f0;
-          box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-          transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-          position: relative;
-          overflow: hidden;
+            padding: 28px;
+            border-radius: 18px;
+            background: #ffffff;
+            border: 1px solid #dbe2e8;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
         }
 
         .house-card::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0;
-          width: 4px; height: 100%;
-          background: linear-gradient(to bottom, #0d6efd, #0d9ffb);
-          border-radius: 4px 0 0 4px;
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 6px; height: 100%;
+            background: linear-gradient(to bottom, #3b82f6, #60a5fa);
+            border-radius: 6px 0 0 6px;
         }
 
         .house-card:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 14px 30px rgba(0, 0, 0, 0.15);
-          border-color: #b8daff;
+            transform: translateY(-5px);
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+            border-color: #cbd5e1;
         }
 
         .address {
-          font-size: 20px;
-          font-weight: 600;
-          color: #1a3a6e;
-          margin-bottom: 12px;
+            font-size: 19px;
+            font-weight: 600;
+            color: #1e3a8a;
+            margin-bottom: 10px;
         }
 
         .price {
-          font-size: 22px;
-          font-weight: bold;
-          color: #d32f2f;
-          margin-bottom: 14px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #dc2626;
+            margin-bottom: 14px;
         }
 
         .info {
-          font-size: 15px;
-          color: #444;
-          line-height: 1.7;
+            font-size: 15px;
+            color: #475569;
+            line-height: 1.7;
         }
 
         .info i {
-          color: #0d6efd;
-          width: 18px;
-          margin-right: 4px;
+            color: #3b82f6;
+            width: 18px;
+            margin-right: 6px;
         }
 
         .ai_comment {
-          font-style: italic;
-          color: #5a6b7c;
-          margin-top: 14px;
-          font-size: 14px;
-          line-height: 1.5;
-          border-top: 1px dashed #e0e7f1;
-          padding-top: 10px;
+            font-style: italic;
+            color: #0f766e;
+            margin-top: 16px;
+            font-size: 15px;
+            line-height: 1.6;
+            padding: 12px 16px;
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: 10px;
+            font-weight: 500;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .ai_comment::before {
+            content: "💡 ";
         }
 
         .no-results {
-          grid-column: 1 / -1;
-          text-align: center;
-          color: #999;
-          font-style: italic;
-          padding: 40px;
-          font-size: 17px;
-          background: #f8f9fd;
-          border-radius: 12px;
-          border: 1px dashed #b8daff;
+            grid-column: 1 / -1;
+            text-align: center;
+            color: #94a3b8;
+            font-style: italic;
+            padding: 40px;
+            font-size: 17px;
+            background: #f8fafc;
+            border-radius: 14px;
+            border: 1px dashed #cbd5e1;
         }
 
         .loading {
-          grid-column: 1 / -1;
-          text-align: center;
-          padding: 30px;
-          font-size: 18px;
-          color: #666;
-        }
-
-        .banner {
-          width: 100%;
-          height: 220px; /* 可根据需要调整高度 */
-          background-image: url('./banner.png');
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-          border-bottom: 1px solid #e0e8f3;
-        }
-
-        .banner {
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-          font-size: 32px;
-          font-weight: bold;
-        }
-
-        .banner::before {
-          content: '';
-          position: absolute;
-          top: 0; left: 0; right: 0; bottom: 0;
-          background: rgba(0, 0, 0, 0.2); /* 深色遮罩，提升文字可读性 */
-          z-index: 1;
-        }
-
-        .banner > span {
-          position: relative;
-          z-index: 2;
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 30px;
+            font-size: 18px;
+            color: #64748b;
         }
     </style>
 </head>
@@ -226,32 +289,47 @@
         <span>欢迎使用智能房产搜索</span>
     </div>
 
+    <!-- 悬浮搜索框（带清空和搜索按钮） -->
+    <div class="search-overlay">
+        <input
+            type="text"
+            v-model="searchQuery"
+            @keyup.enter="handleSearch"
+            placeholder="🔍 输入需求，如：找一个武侯区的三房两卫，总价100万左右，靠近地铁"
+            class="search-box"
+            ref="searchInput"
+        />
+        <div class="search-controls">
+            <!-- 清空按钮 -->
+            <button
+                v-if="searchQuery"
+                @click="clearSearch"
+                class="btn-clear"
+                title="清空"
+            >×</button>
+            <!-- 搜索按钮 -->
+            <button
+                @click="handleSearch"
+                class="btn-search"
+                title="搜索"
+            >
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- 主容器 -->
     <div class="container">
-<!--        <h1><i class="fas fa-home" style="color:#0d6efd;margin-right:8px;"></i>房产搜索</h1>-->
-
-        <!-- 搜索框：输入即搜索 -->
-        <input
-                type="text"
-                v-model="searchQuery"
-                placeholder="🔍 输入需求，如：找一个武侯区的三房两卫，总价100万，靠近地铁"
-                class="search-box"
-        />
-
-        <!-- 结果区域 -->
         <div class="results-grid">
-            <!-- 加载中 -->
             <div v-if="loading" class="loading">
                 <i class="fas fa-spinner fa-spin"></i> 正在搜索房源...
             </div>
 
-            <!-- 无结果 -->
             <div v-else-if="houses.length === 0" class="no-results">
                 <i class="fas fa-search-minus" style="font-size:24px;margin-bottom:8px;color:#999;"></i><br>
                 暂无匹配的房源，请尝试其他关键词
             </div>
 
-            <!-- 房源列表 -->
             <div v-for="house in houses" :key="house.id" class="house-card">
                 <div class="address">
                     {{ house.province }} {{ house.city }} {{ house.district }}
@@ -265,69 +343,66 @@
                     <i class="fas fa-subway"></i> 距地铁: {{ Math.round(house.distance_to_metro) }}米<br>
                     <i class="fas fa-school"></i> 距学校: {{ Math.round(house.distance_to_school) }}米
                 </div>
-                <div class="ai_comment">AI点评：{{ house.ai_comment }}</div>
+                <div class="ai_comment">{{ house.ai_comment }}</div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    const { createApp, ref, watch } = Vue;
+    const { createApp, ref } = Vue;
 
     createApp({
-      setup() {
-        const searchQuery = ref('找一个武侯区的三房两卫，总价100万，靠近地铁');
-        const houses = ref([]);
-        const loading = ref(false);
-        let debounceTimer = null;
+        setup() {
+            const searchQuery = ref('找一个武侯区的三房两卫，总价100万，靠近地铁');
+            const houses = ref([]);
+            const loading = ref(false);
+            const searchInput = ref(null); // 用于聚焦
 
-        // 搜索函数：发送请求
-        const searchHouses = async (query) => {
-          if (!query.trim()) {
-            houses.value = [];
-            return;
-          }
+            // 搜索处理函数
+            const handleSearch = async () => {
+                const query = searchQuery.value.trim();
+                if (!query) {
+                    houses.value = [];
+                    return;
+                }
 
-          loading.value = true;
-          try {
-            const response = await fetch('http://localhost:8010/search', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ query })
-            });
+                loading.value = true;
+                try {
+                    const response = await fetch('http://localhost:8010/search', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query })
+                    });
 
-            if (!response.ok) throw new Error('网络错误');
+                    if (!response.ok) throw new Error('网络错误');
+                    const data = await response.json();
+                    houses.value = Array.isArray(data.results) ? data.results : [];
+                } catch (err) {
+                    console.error('搜索失败:', err);
+                    houses.value = [];
+                    alert('搜索失败，请检查服务是否运行（http://localhost:8010/search）');
+                } finally {
+                    loading.value = false;
+                }
+            };
 
-            const data = await response.json();
-            houses.value = Array.isArray(data.results) ? data.results : [];
-          } catch (err) {
-            console.error('搜索失败:', err);
-            houses.value = [];
-            alert('搜索失败，请检查服务是否运行（http://localhost:8010/search）');
-          } finally {
-            loading.value = false;
-          }
-        };
+            // 清空输入
+            const clearSearch = () => {
+                searchQuery.value = '';
+                houses.value = [];
+                searchInput.value?.focus(); // 清空后聚焦输入框
+            };
 
-        // 监听 searchQuery 变化，使用防抖
-        watch(searchQuery, (newQuery) => {
-          // 清除之前的定时器
-          if (debounceTimer) clearTimeout(debounceTimer);
-
-          // 设置新的延迟请求
-          debounceTimer = setTimeout(() => {
-            searchHouses(newQuery);
-          }, 1000); // 延迟 600ms，确保输入暂停后再请求
-        });
-
-        return {
-          searchQuery,
-          houses,
-          loading
-        };
-      }
+            return {
+                searchQuery,
+                houses,
+                loading,
+                handleSearch,
+                clearSearch,
+                searchInput
+            };
+        }
     }).mount('#app');
 </script>
 </body>
