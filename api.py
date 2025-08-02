@@ -3,7 +3,9 @@ import re
 
 import ollama
 import redis
-from fastapi import FastAPI, HTTPException
+from fastapi import HTTPException, FastAPI
+from fastapi.staticfiles import StaticFiles  # 新增：用于提供静态文件
+from fastapi.responses import FileResponse  # 新增：用于返回 HTML 文件
 from pydantic import BaseModel
 from typing import List, Dict, Any
 from pymilvus import connections, Collection, FieldSchema, DataType
@@ -38,15 +40,14 @@ OLLAMA_MODEL = 'qwen3:4b'
 
 # 初始化 FastAPI
 app = FastAPI(title="房产智能搜索接口")
+app.mount("/static", StaticFiles(directory="static"), name="static")
 # 配置 CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[  # 明确列出前端地址
-        "http://localhost:8080",
-        "http://127.0.0.1:8080",
-        "http://localhost:5173",   # Vite 默认
-        "http://127.0.0.1:5173",
         "http://localhost:63342",
+        "http://localhost:8010",
+        "http://127.0.0.1:8010",
         ["*"],
     ],
     allow_credentials=True,
@@ -219,6 +220,11 @@ def add_comment_with_ollama(candidates: List[Dict[str, Any]]) -> List[Dict[str, 
             )
         return candidates
 # ==================== FastAPI 接口 ====================
+
+@app.get("/")
+def read_root():
+    return FileResponse("static/index.html")
+
 @app.post("/search", response_model=SearchResponse)
 async def search_properties(request: SearchRequest):
     try:
@@ -267,7 +273,7 @@ async def search_properties(request: SearchRequest):
                 "distance_to_metro": float(entity.distance_to_metro),
                 "distance_to_school": float(entity.distance_to_school),
                 "ai_comment": "",
-                "image":f"./images/{i+1}.jpg",
+                "image":f"/static/images/{i+1}.jpg",
             }
             candidates.append(prop)
 
