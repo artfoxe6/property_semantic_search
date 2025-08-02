@@ -2,6 +2,7 @@ import json
 import re
 
 import ollama
+import redis
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any
@@ -31,8 +32,8 @@ from fastapi.middleware.cors import CORSMiddleware  # 导入 CORS 中间件
 MILVUS_HOST = "localhost"
 MILVUS_PORT = "19530"
 COLLECTION_NAME = "properties"
-OLLAMA_MODEL = 'qwen3:8b'
-# OLLAMA_MODEL = 'qwen3:0.6b'
+# OLLAMA_MODEL = 'qwen3:8b'
+OLLAMA_MODEL = 'qwen3:4b'
 
 
 # 初始化 FastAPI
@@ -52,6 +53,18 @@ app.add_middleware(
     allow_methods=["*"],      # 允许 POST, GET, OPTIONS 等
     allow_headers=["*"],      # 允许所有请求头
 )
+
+# ==================== 配置 Redis ====================
+# 请确保本地或远程 Redis 服务正在运行
+try:
+    r = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+    r.ping()  # 测试连接
+    REDIS_AVAILABLE = True
+    logging.info("Redis 连接成功")
+except Exception as e:
+    logging.warning(f"Redis 连接失败: {e}")
+    REDIS_AVAILABLE = False
+    r = None
 
 # 连接 Milvus
 try:
@@ -82,11 +95,9 @@ class PropertyResult(BaseModel):
     build_year: int
     list_at: str
     decoration: str
-    type: str
     distance_to_metro: float
     distance_to_school: float
-    description: str
-    # ai_comment: str
+    ai_comment: str
 
 
 class SearchResponse(BaseModel):
@@ -94,154 +105,118 @@ class SearchResponse(BaseModel):
 
 
 # ==================== 核心处理函数 ====================
-
-def filter_and_comment_with_ollama(query: str, candidates: List[Dict]) -> List[Dict]:
+def add_comment_with_ollama(candidates: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
-    使用 Ollama 一次性完成：
-    1. 过滤符合条件的房源
-    2. 为符合条件的房源生成 AI 点评
+    调用本地 Ollama 模型，批量为房源生成精彩介绍（300–500字），返回 JSON 格式。
+    已在 Redis 中缓存的房源直接读取，未生成的才请求模型。
+    :param candidates: 房源列表
+    :return: 带 ai_comment 的房源列表
     """
     if not candidates:
-        return []
+        return candidates
 
-    # 构造输入房源信息
-    properties_str = "\n---\n".join([
-        f"ID: {prop['id']}\n"
-        f"地区：{prop['district']}\n"
-        f"户型：{prop['bedrooms']}室{prop['bathrooms']}卫\n"
-        f"面积：{prop['area']}平米\n"
-        f"价格：{prop['price']}万元\n"
-        f"车位：{prop['carspaces']}车位\n"
-        f"装修：{prop['decoration']}\n"
-        f"建造年份：{prop['build_year']}\n"
-        f"地铁距离：{prop['distance_to_metro']}米\n"
-        f"学校距离：{prop['distance_to_school']}米\n"
-        for prop in candidates
-    ])
+    model_cache_key = f"ollama_comment:{OLLAMA_MODEL}"  # 按模型区分缓存
 
-    system_prompt1 = """
-    你是一个专业的房产分析师，请根据用户需求，逐个判断下面每个房源是否满足要求，并为所有满足条件的房源撰写一段简短中文点评（约100字）,不符合条件的房源编辑原因。
+    # Step 1: 查找已缓存的房源
+    uncached_candidates = []
+    for prop in candidates:
+        cache_key = f"{model_cache_key}:id_{prop['id']}"
+        cached_comment = r.get(cache_key) if REDIS_AVAILABLE else None
+        if cached_comment:
+            prop['ai_comment'] = cached_comment
+        else:
+            uncached_candidates.append(prop)
 
-    判断标准如下：
-    1. 地区（district）必须严格匹配；
-    2. 房间数（bedrooms、bathrooms）必须满足；
-    3. 面积和价格允许 ±20% 浮动；
-    4. 地铁距离在 1000 米以内视为“近地铁”。
+    # 如果全部已缓存，直接返回
+    if not uncached_candidates:
+        return candidates
 
-    输出要求：
-    - 输出一个 **完整的 JSON 数组**，每个元素包含以下字段：
-      - "id"：房源ID，整数
-      - "include"：布尔值，表示是否符合需求
-      - "comment"：字符串。当 include 为 true 时填写点评，否则填写原因
-    - 必须逐条评估输入中的每个房源，不能跳过；
-    - 不能省略字段；
-    - 输出所有房源，include为 true和false都需要输出，必须是合法 JSON，不允许出现 Markdown、解释说明或其它文本。
-
-    【格式示例】：
-    [
-      {"id": 1, "include": true, "comment": "这套房源位于核心区域，三房两卫，靠近地铁，性价比高。"},
-      {"id": 2, "include": false, "comment": "查询条件的房间数和目标房源不匹配"},
-      ...
-    ]
-
-    请严格遵守格式要求。
-    """.strip()
-
-    user_prompt = f"""
-    {system_prompt1}
-    
-    
-    用户需求：{query}
-
-    以下是候选房源信息：
-
-    {properties_str}
-
-    请评估每套房源并输出 JSON 数组结果：
-    """.strip()
-    print(f"{system_prompt1}\n\n{user_prompt}")
     try:
-        # response = ollama.generate(
-        #     model=OLLAMA_MODEL,
-        #     prompt=f"{system_prompt}\n\n{user_prompt}",
-        #     options={
-        #         "temperature": 0.7,
-        #         "num_ctx": 8192,  # 确保上下文足够
-        #     },
-        #     format="json"  # 强制返回 JSON 格式（需要模型支持）
-        # )
-        # text = response['response'].strip()
+        # Step 2: 构造 JSON 输出格式的 prompt
+        prompt = f"""
+你是一位专业的房产文案专家。请根据以下 {len(uncached_candidates)} 套房源信息，
+为每套房生成一段 300 到 500 字之间的精彩介绍文案，突出地段、户型、价格、交通、学区等优势。
+语言要生动、有画面感，适合用于房产推荐页。
 
-        # 假设你的 system_prompt 和 user_prompt 已定义
-        system_prompt = "You are a helpful assistant."  # Open WebUI 默认常用 system prompt
-        # user_prompt = "请介绍一下你自己。"
+要求：
+- 输出必须是严格的 JSON 数组格式，数组长度为 {len(uncached_candidates)}
+- 每个元素是一个字符串，即 ai_comment 内容
+- 不要包含任何额外说明、Markdown 符号或字段名
+- 使用中文，不要使用“您”或“我们”
 
-        response = ollama.chat(
-            model=OLLAMA_MODEL,  # 如 'llama3' 或 'mistral' 等
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
-            ],
+示例输出格式：
+["这是第一套房的精彩描述...", "这是第二套房的精彩描述..."]
+
+请开始，对应以下房源：
+"""
+
+        # 添加房源详情
+        input_list = []
+        for prop in uncached_candidates:
+            input_list.append({
+                "id": prop["id"],
+                "户型": f"{prop['bedrooms']}室{prop['bathrooms']}卫",
+                "面积": f"{prop['area']:.0f}㎡",
+                "车位": f"{prop['carspaces']}车位",
+                "总价": f"{prop['price']:.0f}万元",
+                "单价": f"{(prop['price'] * 10000) / prop['area']:.0f}元/㎡",
+                "楼层": f"{prop['floor']}层",
+                "建造年份": f"{prop['build_year']}年",
+                "装修": prop['decoration'],
+                "区域": f"{prop['province']}{prop['city']}{prop['district']}",
+                "地铁距离": f"约{prop['distance_to_metro']:.0f}米",
+                "学校距离": f"约{prop['distance_to_school']:.0f}米",
+                "上市时间": prop['list_at']
+            })
+
+        prompt += json.dumps(input_list, ensure_ascii=False, indent=2)
+
+        # Step 3: 调用 Ollama
+        response = ollama.generate(
+            model=OLLAMA_MODEL,
+            prompt=prompt,
             options={
                 "temperature": 0.7,
-                "num_ctx": 8192,
-                "top_p": 0.9,
-                "frequency_penalty": 0.0,
-                # 可根据需要添加更多参数
-            },
-            format="json"  # 如果模型支持 JSON 输出格式（需模型训练支持）
+                "num_ctx": 8192  # 确保上下文足够长
+            }
         )
 
-        text = response['message']['content'].strip()
+        raw_output = response['response'].strip()
+        raw_output =  re.sub(r'<think>.*?</think>', '', raw_output, flags=re.DOTALL).strip()
 
-        # 清理可能的 think 标签等非 JSON 内容
-        text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
-        text = text.strip()
-        if text.startswith("```json"):
-            text = text[7:-3].strip()  # 去掉 ```json 和 ```
+        # Step 4: 尝试解析 JSON
+        try:
+            comments = json.loads(raw_output)
+            if not isinstance(comments, list):
+                raise ValueError("输出不是数组")
+            if len(comments) != len(uncached_candidates):
+                raise ValueError(f"长度不匹配：期望 {len(uncached_candidates)}，得到 {len(comments)}")
+        except json.JSONDecodeError as e:
+            logging.warning(f"JSON 解析失败: {e}, 原始输出: {raw_output[:200]}...")
+            raise RuntimeError("模型未返回有效 JSON")
 
-        text = re.sub(r'\n', '', text, flags=re.DOTALL)
-        ok, parsed_results = safe_json_loads(text)
-        if not ok:
-            raise ValueError(f"JSON 解析失败: {parsed_results}")
-        # 映射回原始数据并添加点评
-        id_to_prop = {prop['id']: prop for prop in candidates}
-        filtered_with_comment = []
+        # Step 5: 写入结果并缓存到 Redis
+        for prop, comment in zip(uncached_candidates, comments):
+            prop['ai_comment'] = comment
+            cache_key = f"{model_cache_key}:id_{prop['id']}"
+            if REDIS_AVAILABLE:
+                try:
+                    r.set(cache_key, comment, ex=3600 * 24 * 7)  # 缓存 7 天
+                except Exception as e:
+                    logging.warning(f"Redis 写入失败: {e}")
 
-        for item in parsed_results:
-            prop_id = item.get("id")
-            include = item.get("include", False)
-            comment = (item.get("comment") or "").strip()
-
-            if prop_id not in id_to_prop:
-                continue
-            if not include:
-                continue
-
-            prop = id_to_prop[prop_id]
-            prop['ai_comment'] = comment if comment else "这是一套符合您需求的优质房源。"
-            filtered_with_comment.append(prop)
-
-        return filtered_with_comment
+        return candidates
 
     except Exception as e:
-        logging.error(f"Ollama 批量处理失败: {e}")
-        # 备降：保守全部保留，生成基础点评
-        fallback_results = []
-        for prop in candidates:
-            prop['ai_comment'] = "AI点评生成中..."
-            fallback_results.append(prop)
-        return fallback_results
-
-
-def safe_json_loads(s):
-    try:
-        obj = json.loads(s)
-        return True, obj
-    except json.JSONDecodeError as e:
-        return False, str(e)
-
-
+        logging.warning(f"Ollama生成失败，使用默认文案: {e}")
+        # 兜底：使用简单描述
+        for prop in uncached_candidates:
+            prop['ai_comment'] = (
+                f"位于{prop['district']}的{prop['bedrooms']}室{prop['bathrooms']}卫房源，"
+                f"面积约{prop['area']:.0f}㎡，总价{prop['price']:.0f}万元，"
+                f"距离地铁{prop['distance_to_metro']:.0f}米，生活便利，值得考虑。"
+            )
+        return candidates
 # ==================== FastAPI 接口 ====================
 @app.post("/search", response_model=SearchResponse)
 async def search_properties(request: SearchRequest):
@@ -266,7 +241,7 @@ async def search_properties(request: SearchRequest):
             output_fields=[
                 "id", "bedrooms", "bathrooms", "carspaces", "floor", "area", "price",
                 "province", "city", "district", "build_year", "list_at", "decoration",
-                "type", "distance_to_metro", "distance_to_school", "description"
+                "distance_to_metro", "distance_to_school"
             ]
         )
 
@@ -288,17 +263,16 @@ async def search_properties(request: SearchRequest):
                 "build_year": entity.build_year,
                 "list_at": entity.list_at,
                 "decoration": entity.decoration,
-                "type": entity.type,
                 "distance_to_metro": float(entity.distance_to_metro),
                 "distance_to_school": float(entity.distance_to_school),
-                "description": entity.description
+                "ai_comment": ""
             }
             candidates.append(prop)
 
-        # 4. 使用 Ollama 过滤 + 生成点评
-        # final_results = filter_and_comment_with_ollama(request.query, candidates)
+        # 4. 使用 Ollama 生成点评
+        candidates_with_comment = add_comment_with_ollama(candidates)
         # 组装 返回结果 List[PropertyResult]
-        final_results = [PropertyResult(**prop) for prop in candidates]
+        final_results = [PropertyResult(**prop) for prop in candidates_with_comment]
         # 5. 返回结果
         return SearchResponse(results=final_results)
 
