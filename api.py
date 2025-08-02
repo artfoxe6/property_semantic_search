@@ -26,7 +26,7 @@ from fastapi.middleware.cors import CORSMiddleware  # 导入 CORS 中间件
     curl --location 'http://127.0.0.1:8010/search' \
     --header 'Content-Type: application/json' \
     --data '{
-      "query": "找一个武侯区的三房两卫，总价100万，靠近地铁"
+      "query": "找一个武侯区的三房两卫，总价100万左右，靠近地铁"
     }'
 
 """
