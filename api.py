@@ -98,6 +98,7 @@ class PropertyResult(BaseModel):
     distance_to_metro: float
     distance_to_school: float
     ai_comment: str
+    image: str
 
 
 class SearchResponse(BaseModel):
@@ -247,7 +248,7 @@ async def search_properties(request: SearchRequest):
 
         # 3. 提取候选结果
         candidates = []
-        for res in results[0]:
+        for i, res in enumerate(results[0]):
             entity = res.entity
             prop = {
                 "id": entity.id,
@@ -265,7 +266,8 @@ async def search_properties(request: SearchRequest):
                 "decoration": entity.decoration,
                 "distance_to_metro": float(entity.distance_to_metro),
                 "distance_to_school": float(entity.distance_to_school),
-                "ai_comment": ""
+                "ai_comment": "",
+                "image":f"./images/{i+1}.jpg",
             }
             candidates.append(prop)
 

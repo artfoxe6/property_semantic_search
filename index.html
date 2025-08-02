@@ -4,17 +4,13 @@
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>房产搜索</title>
-
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Roboto:wght@400;500&display=swap"
           rel="stylesheet">
-
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
     <!-- Vue 3 CDN -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-
     <style>
         body {
             font-family: 'Noto Sans SC', 'Roboto', sans-serif;
@@ -24,7 +20,6 @@
             min-height: 100vh;
             color: #475569;
             line-height: 1.6;
-            /* 移除 justify-content: center，避免干扰 */
         }
 
         /* Banner 更高 */
@@ -45,39 +40,35 @@
             font-weight: bold;
             z-index: 1;
         }
+        .banner::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to bottom, rgba(30, 58, 138, 0.6), rgba(30, 58, 138, 0.4));
+            z-index: 1;
+        }
+        .banner > span {
+            position: relative;
+            z-index: 2;
+        }
 
-
-.banner::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: linear-gradient(to bottom, rgba(30, 58, 138, 0.6), rgba(30, 58, 138, 0.4));
-    z-index: 1;
-}
-
-.banner > span {
-    position: relative;
-    z-index: 2;
-}
-
-.search-overlay {
-    position: absolute;
-    top: 240px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 80%;
-    max-width: 800px;
-    z-index: 10;
-    background: white;
-    border-radius: 18px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    box-sizing: border-box;
-}
-
-        /* 搜索输入框 */
+        /* 搜索框 */
+        .search-overlay {
+            position: absolute;
+            top: 240px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 800px;
+            z-index: 10;
+            background: white;
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+        }
         .search-box {
             flex: 1;
             padding: 16px 16px 16px 12px;
@@ -87,15 +78,11 @@
             outline: none;
             background: transparent;
         }
-
-        /* 清空按钮和搜索按钮容器 */
         .search-controls {
             display: flex;
             align-items: center;
             gap: 8px;
         }
-
-        /* 清空按钮 × */
         .btn-clear {
             background: none;
             border: none;
@@ -110,14 +97,11 @@
             border-radius: 50%;
             opacity: 0.8;
         }
-
         .btn-clear:hover {
             color: #64748b;
             background: #e2e8f0;
             opacity: 1;
         }
-
-        /* 搜索按钮 */
         .btn-search {
             background: #3b82f6;
             color: white;
@@ -133,29 +117,27 @@
             box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
             transition: all 0.2s ease;
         }
-
         .btn-search:hover {
             background: #2563eb;
             transform: scale(1.05);
         }
-
         .btn-search:active {
             transform: scale(0.98);
         }
 
         /* 主容器 */
-    .container {
-        width: 100%; /* 改为 100%，配合 max-width 实现响应式居中 */
-        max-width: 1600px;
-        min-width: 800px;
-        padding: 50px;
-        background: #ffffff;
-        border-radius: 24px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        border: 1px solid #e2e8f0;
-        margin: 50px auto 0; /* 上下间距 + 左右自动居中 */
-        backdrop-filter: blur(4px);
-    }
+        .container {
+            width: 100%;
+            max-width: 1600px;
+            min-width: 800px;
+            padding: 50px;
+            background: #ffffff;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e2e8f0;
+            margin: 50px auto 0;
+            backdrop-filter: blur(4px);
+        }
 
         .results-grid {
             display: grid;
@@ -168,7 +150,6 @@
                 grid-template-columns: repeat(2, 1fr);
             }
         }
-
         @media (max-width: 768px) {
             .search-overlay {
                 width: 90%;
@@ -191,7 +172,7 @@
             }
         }
 
-        /* 房源卡片样式保持不变 */
+        /* 房源卡片样式 */
         .house-card {
             padding: 28px;
             border-radius: 18px;
@@ -200,6 +181,9 @@
             box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
         }
 
         .house-card::before {
@@ -217,18 +201,53 @@
             border-color: #cbd5e1;
         }
 
+        /* 图文布局：左图右文 */
+        .house-content {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .house-image-container {
+            flex: 0 0 140px;
+            width: 140px;
+            height: 140px;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .house-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .house-image-container:hover .house-image {
+            transform: scale(1.05);
+        }
+
+        .house-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
         .address {
             font-size: 19px;
             font-weight: 600;
             color: #1e3a8a;
-            margin-bottom: 10px;
+            margin: 0;
         }
 
         .price {
             font-size: 22px;
             font-weight: bold;
             color: #dc2626;
-            margin-bottom: 14px;
+            margin: 8px 0;
         }
 
         .info {
@@ -243,6 +262,7 @@
             margin-right: 6px;
         }
 
+        /* 点评在下方 */
         .ai_comment {
             font-style: italic;
             color: #0f766e;
@@ -289,7 +309,7 @@
         <span>欢迎使用智能房产搜索</span>
     </div>
 
-    <!-- 悬浮搜索框（带清空和搜索按钮） -->
+    <!-- 悬浮搜索框 -->
     <div class="search-overlay">
         <input
             type="text"
@@ -300,19 +320,8 @@
             ref="searchInput"
         />
         <div class="search-controls">
-            <!-- 清空按钮 -->
-            <button
-                v-if="searchQuery"
-                @click="clearSearch"
-                class="btn-clear"
-                title="清空"
-            >×</button>
-            <!-- 搜索按钮 -->
-            <button
-                @click="handleSearch"
-                class="btn-search"
-                title="搜索"
-            >
+            <button v-if="searchQuery" @click="clearSearch" class="btn-clear" title="清空">×</button>
+            <button @click="handleSearch" class="btn-search" title="搜索">
                 <i class="fas fa-search"></i>
             </button>
         </div>
@@ -324,25 +333,34 @@
             <div v-if="loading" class="loading">
                 <i class="fas fa-spinner fa-spin"></i> 正在搜索房源...
             </div>
-
             <div v-else-if="houses.length === 0" class="no-results">
                 <i class="fas fa-search-minus" style="font-size:24px;margin-bottom:8px;color:#999;"></i><br>
                 暂无匹配的房源，请尝试其他关键词
             </div>
-
             <div v-for="house in houses" :key="house.id" class="house-card">
-                <div class="address">
-                    {{ house.province }} {{ house.city }} {{ house.district }}
+                <!-- 左图右信息布局 -->
+                <div class="house-content">
+                    <!-- 图片（左） -->
+                    <div v-if="house.image" class="house-image-container">
+                        <img :src="house.image" class="house-image" />
+                    </div>
+                    <!-- 基本信息（右） -->
+                    <div class="house-info">
+                        <div class="address">
+                            {{ house.province }} {{ house.city }} {{ house.district }}
+                        </div>
+                        <div class="price">¥{{ house.price.toLocaleString() }} 万</div>
+                        <div class="info">
+                            <i class="fas fa-bed"></i> {{ house.bedrooms }}室{{ house.bathrooms }}卫<br>
+                            <i class="fas fa-ruler-combined"></i> 面积: {{ house.area }}㎡<br>
+                            <i class="fas fa-calendar-alt"></i> 建筑年代: {{ house.build_year }}年<br>
+                            <i class="fas fa-paint-brush"></i> 装修: {{ house.decoration }}<br>
+                            <i class="fas fa-subway"></i> 距地铁: {{ Math.round(house.distance_to_metro) }}米<br>
+                            <i class="fas fa-school"></i> 距学校: {{ Math.round(house.distance_to_school) }}米
+                        </div>
+                    </div>
                 </div>
-                <div class="price">¥{{ house.price.toLocaleString() }} 万</div>
-                <div class="info">
-                    <i class="fas fa-bed"></i> {{ house.bedrooms }}室{{ house.bathrooms }}卫<br>
-                    <i class="fas fa-ruler-combined"></i> 面积: {{ house.area }}㎡<br>
-                    <i class="fas fa-calendar-alt"></i> 建筑年代: {{ house.build_year }}年<br>
-                    <i class="fas fa-paint-brush"></i> 装修: {{ house.decoration }}<br>
-                    <i class="fas fa-subway"></i> 距地铁: {{ Math.round(house.distance_to_metro) }}米<br>
-                    <i class="fas fa-school"></i> 距学校: {{ Math.round(house.distance_to_school) }}米
-                </div>
+                <!-- AI点评（下方） -->
                 <div class="ai_comment">{{ house.ai_comment }}</div>
             </div>
         </div>
@@ -351,22 +369,19 @@
 
 <script>
     const { createApp, ref } = Vue;
-
     createApp({
         setup() {
             const searchQuery = ref('找一个武侯区的三房两卫，总价100万，靠近地铁');
             const houses = ref([]);
             const loading = ref(false);
-            const searchInput = ref(null); // 用于聚焦
+            const searchInput = ref(null);
 
-            // 搜索处理函数
             const handleSearch = async () => {
                 const query = searchQuery.value.trim();
                 if (!query) {
                     houses.value = [];
                     return;
                 }
-
                 loading.value = true;
                 try {
                     const response = await fetch('http://localhost:8010/search', {
@@ -374,7 +389,6 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ query })
                     });
-
                     if (!response.ok) throw new Error('网络错误');
                     const data = await response.json();
                     houses.value = Array.isArray(data.results) ? data.results : [];
@@ -387,11 +401,10 @@
                 }
             };
 
-            // 清空输入
             const clearSearch = () => {
                 searchQuery.value = '';
                 houses.value = [];
-                searchInput.value?.focus(); // 清空后聚焦输入框
+                searchInput.value?.focus();
             };
 
             return {
